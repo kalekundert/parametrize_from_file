@@ -8,8 +8,15 @@ author = "Kale Kundert"
 author-email = "kale@thekunderts.net"
 home-page = 'https://github.com/kalekundert/parametrize_from_file'
 description-file = 'README.rst'
-requires-python = "~=3.6"
+requires-python = "~=3.7"
 requires = [
+  'rtoml',
+  'pyyaml',
+  'nestedtext',
+  'tidyexc',
+  'pytest',
+  'more_itertools',
+  'schema',
 ]
 classifiers = [
   'Programming Language :: Python :: 3',
@@ -17,12 +24,12 @@ classifiers = [
 ]
 
 [tool.flit.metadata.requires-extra]
-tests = [
+test = [
   'pytest',
   'pytest-cov',
   'coveralls',
 ]
-docs = [
+doc = [
   'sphinx',
   'sphinx_rtd_theme',
   'autoclasstoc',
@@ -35,6 +42,11 @@ docs = [
 'Continuous Integration' = 'https://github.com/kalekundert/parametrize_from_file/actions'
 'Test Coverage' = 'https://coveralls.io/github/kalekundert/parametrize_from_file'
 
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --doctest-glob='*.rst'"
+doctest_optionflags = 'NORMALIZE_WHITESPACE'
+markers = ["slow"]
+
 [tool.semantic_release]
-version_variable = 'parametrize_from_file/__init__.py:__version__'
+version_variable = 'parametrize_from_file.py:__version__'
 build_command = 'python -m pip install flit && flit build'

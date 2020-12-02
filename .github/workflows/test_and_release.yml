@@ -29,7 +29,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install '.[tests]'
+          flit install -s --extras=test
       - name: Run test suite
         run: |
           pytest tests --cov parametrize_from_file

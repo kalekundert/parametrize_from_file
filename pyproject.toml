@@ -10,7 +10,7 @@ home-page = 'https://github.com/kalekundert/parametrize_from_file'
 description-file = 'README.rst'
 requires-python = "~=3.7"
 requires = [
-  'rtoml',
+  'toml',
   'pyyaml',
   'nestedtext',
   'tidyexc',

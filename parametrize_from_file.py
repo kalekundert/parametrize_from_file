@@ -7,7 +7,7 @@ Parameterize unit tests with values from YAML, TOML, and NT files.
 __version__ = '0.0.0'
 
 import sys, pytest, inspect
-import json, rtoml, yaml, nestedtext as nt
+import json, toml, yaml, nestedtext as nt
 from pathlib import Path
 from functools import lru_cache
 from more_itertools import first
@@ -26,7 +26,7 @@ LOADERS = {
         '.json': _load_json,
         '.yaml': _load_yml,
         '.yml': _load_yml,
-        '.toml': rtoml.load,
+        '.toml': toml.load,
         '.nt': nt.load,
 }
 

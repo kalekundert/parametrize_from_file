@@ -212,7 +212,8 @@ def _check_test_params_keys(test_params):
     test_param_keys = set.union(set(), *(set(x) for x in test_params)) - special_keys
 
     for case_params in test_params:
-        if missing := test_param_keys - set(case_params):
+        missing = test_param_keys - set(case_params)
+        if missing:
             err = ConfigError(
                     params=case_params,
                     missing=missing,

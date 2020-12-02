@@ -136,7 +136,7 @@ def _find_param_path(test_path, rel_path):
 
     return param_path
 
-@lru_cache
+@lru_cache()
 def _load_and_cache_suite_params(path):
     # This should be guaranteed by _find_param_path().
     assert path.suffix in LOADERS

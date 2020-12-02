@@ -9,8 +9,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-￼       with:
-￼         fetch-depth: 0
+        with:
+          fetch-depth: 0
       - uses: wagoid/commitlint-github-action@v2
 
   test:

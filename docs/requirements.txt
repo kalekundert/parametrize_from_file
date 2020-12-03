@@ -7,11 +7,9 @@ iniconfig==1.1.1
 more-itertools==8.6.0
 nestedtext==1.2.0
 packaging==20.7
-parametrize-from-file==0.0.1
 pluggy==0.13.1
 py==1.9.0
 pyparsing==2.4.7
-pytest==6.1.2
 python-dateutil==2.8.1
 PyYAML==5.3.1
 schema==0.7.2

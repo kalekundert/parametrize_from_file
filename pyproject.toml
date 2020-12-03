@@ -32,6 +32,14 @@ test = [
 doc = [
   'sphinx',
   'sphinx_rtd_theme',
+
+  # 'dateutil' is a distant depdendency of 'nestedtext':
+  #   nestedtext > inform > arrow > dateutil
+  # 
+  # For some reason, ReadTheDocs doesn't install 'dateutil', while GitHub 
+  # Actions does.  I'm not sure exactly what going on, but including 'dateutil' 
+  # as a doc dependency is a simply way to get things working.
+  'python-dateutil',
 ]
 
 [tool.flit.metadata.urls]

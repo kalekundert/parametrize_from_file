@@ -33,7 +33,8 @@ lots of quoting or escaping for such values:
 Note that the parameters are indexed by test function (``test_dot`` in this 
 case).  This allows parameters for multiple test functions to be specified in a 
 single file.  The usual organization is to have one parameter file per test 
-file, with both files having the same base name.
+file, with both files having the same base name and containing the same set of 
+tests.
 
 Writing the tests
 =================

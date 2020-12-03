@@ -118,6 +118,25 @@ def test_validate_test_params(test_params, schema, expected):
     assert pff._validate_test_params(test_params, schema) == expected
 
 @pytest.mark.parametrize(
+        'test_params, schema, message', [(
+            ['a'],
+            {'a': int},
+            "(?s)'a'.*'a' should be instance of 'dict'",
+        ), (
+            [{'a': 'b'}],
+            {'a': int},
+            "(?s)'a': 'b'.*'b' should be instance of 'int'",
+        ), (
+            [{'a': 'b'}],
+            {'b': str},
+            "(?s)'a': 'b'.*Missing key: 'b'",
+        )
+])
+def test_validate_test_params_err(test_params, schema, message):
+    with pytest.raises(pff.ConfigError, match=message):
+        pff._validate_test_params(test_params, schema)
+
+@pytest.mark.parametrize(
         'test_params, expected', [(
             [],
             set(),
@@ -151,6 +170,22 @@ def test_check_test_param_keys_err(test_params):
     message = "every test case must specify the same parameters"
     with pytest.raises(pff.ConfigError, match=message):
         pff._check_test_params_keys(test_params)
+
+
+@pytest.mark.parametrize(
+        'case_params, expected', [(
+            {'a': 'b'},
+            "'a': 'b'",
+        ), (
+            {'a': 1, 'b': 2},
+            "'a': 1\n'b': 2",
+        ), (
+            1,
+            "1",
+        )
+])
+def test_format_case_params(case_params, expected):
+    assert pff._format_case_params(case_params) == expected
 
 @pytest.mark.parametrize(
         'test_params, keys, values', [(

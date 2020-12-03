@@ -10,8 +10,9 @@ import sys, pytest, inspect
 import json, toml, yaml, nestedtext as nt
 from pathlib import Path
 from functools import lru_cache
+from textwrap import indent
 from more_itertools import first
-from schema import Schema
+from schema import Schema, SchemaError
 from tidyexc import Error
 
 def _load_json(path):
@@ -169,8 +170,27 @@ def _get_test_params(suite_params, test_name):
 def _validate_test_params(test_params, schema):
     if schema is None:
         return test_params
-    else:
-        return Schema([schema]).validate(test_params)
+
+    validate = Schema(schema).validate
+    validated_params = []
+
+    try:
+        for case_params in test_params:
+            p = validate(case_params)
+            validated_params.append(p)
+
+    except SchemaError as orig:
+        err = ConfigError(
+                params=case_params,
+        )
+        err.info += lambda e: (
+                "test case:\n" +
+                indent(_format_case_params(e.params), "    ")
+        )
+        err.blame += orig.code.split('\n')
+        raise err from orig
+
+    return validated_params
 
 def _init_parametrize_args(test_params):
     # Convert the keys into a list to better define their order.  It's 
@@ -219,17 +239,30 @@ def _check_test_params_keys(test_params):
                     missing=missing,
             )
             err.brief = "every test case must specify the same parameters"
-            err.info += lambda e: "\n    ".join([
-                "test case:",
-                *(f'{k}: {v}' for k, v in e.params.items())
-            ])
-            err.blame += lambda e: "\n    ".join([
-                "the following parameters are missing:",
-                *e.missing,
-            ])
+            err.info += lambda e: (
+                    "test case:\n" +
+                    indent(_format_case_params(e.params), "    ")
+            )
+            err.blame += lambda e: (
+                "the following parameters are missing:\n" +
+                '\n'.join(e.missing)
+            )
             raise err
 
     return test_param_keys
+
+def _format_case_params(case_params):
+    """
+    Format a set of case parameters for inclusion in an error message.  Account 
+    for the fact that while the case parameters are supposed to be a 
+    dictionary, they could be anything.
+    """
+    try:
+        return "\n".join(
+                f'{k!r}: {v!r}' for k, v in case_params.items()
+        )
+    except:
+        return repr(case_params)
 
 class Params:
 

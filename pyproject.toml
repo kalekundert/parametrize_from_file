@@ -8,7 +8,7 @@ author = "Kale Kundert"
 author-email = "kale@thekunderts.net"
 home-page = 'https://github.com/kalekundert/parametrize_from_file'
 description-file = 'README.rst'
-requires-python = "~=3.7"
+requires-python = "~=3.6"
 requires = [
   'toml',
   'pyyaml',
@@ -32,10 +32,6 @@ test = [
 doc = [
   'sphinx',
   'sphinx_rtd_theme',
-
-  # For some reason, 'pip' running on ReadTheDocs can't decide on which version 
-  # of the 'nestedtext' > 'inform' > 'arrow' dependency to install.
-  'arrow~=0.17'
 ]
 
 [tool.flit.metadata.urls]

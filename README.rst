@@ -17,9 +17,9 @@ Parametrize From File
 .. image:: https://img.shields.io/coveralls/kalekundert/parametrize_from_file.svg
    :target: https://coveralls.io/github/kalekundert/parametrize_from_file?branch=master
 
-Parametrizing your tests---in other words, separating the test data from the 
-test code---is frequently a good idea.  It makes it easier to add new test 
-cases, while also making it easier to read and understand the test code.
+Parametrizing your tests—in other words, separating the test data from the test 
+code—is frequently a good idea.  It makes it easier to add new test cases, 
+while also making it easier to read and understand the test code.
 
 ``parametrize_from_file`` provides a convenient way to parametrize tests when 
 using the popular pytest_ framework.  The central idea is to keep the 

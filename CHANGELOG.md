@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.1 (2020-12-04)
+### Fix
+* Don't apply the schema to 'id' and 'marks' ([`e18e931`](https://github.com/kalekundert/parametrize_from_file/commit/e18e931749cf83370a88ebadf4a587e07566b41e))
+
+### Documentation
+* Tweak some wording ([`f392eb7`](https://github.com/kalekundert/parametrize_from_file/commit/f392eb7f0854706262e54b4970961a56aaabaeed))
+* Fix punctuation ([`6aa39db`](https://github.com/kalekundert/parametrize_from_file/commit/6aa39db9a2b654820309a7b47ebf4d1ec8aaca6a))
+
 ## v0.1.0 (2020-12-03)
 ### Feature
 * Give more helpful schema errors ([`aac84a0`](https://github.com/kalekundert/parametrize_from_file/commit/aac84a0f16ab1392fdc51e807edfdc6b042b4cc2))

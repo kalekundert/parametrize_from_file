@@ -10,6 +10,7 @@ import sys, pytest, inspect
 import json, toml, yaml, nestedtext as nt
 from pathlib import Path
 from functools import lru_cache
+from contextlib import contextmanager
 from textwrap import indent
 from more_itertools import first
 from schema import Schema, SchemaError
@@ -303,15 +304,29 @@ def _validate_test_params(test_params, schema):
     validate = Schema(schema).validate
     validated_params = []
 
+    def stash_id_marks(obj):
+        stash = {}
+        stash_item(obj, 'id', stash)
+        stash_item(obj, 'marks', stash)
+        return stash
+    def stash_item(obj, key, stash):
+        try:
+            stash[key] = obj.pop(key)
+        except:
+            pass
+
     try:
         for case_params in test_params:
+            stash = stash_id_marks(case_params)
             p = validate(case_params)
+            p.update(stash)
             validated_params.append(p)
 
     except SchemaError as orig:
         err = ConfigError(
                 params=case_params,
         )
+        err.brief = "test case failed schema validation"
         err.info += lambda e: (
                 "test case:\n" +
                 indent(_format_case_params(e.params), "    ")

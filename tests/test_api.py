@@ -102,16 +102,30 @@ def test_get_test_params_err(suite_params, test_name, message):
             [{'a': 1}],
         ), (
             [],
-            {'a': str},
+            {'a': int},
             [],
         ), (
-            [{'a': '1'}],
-            {'a': str},
-            [{'a': '1'}],
+            [{'a': 1}],
+            {'a': int},
+            [{'a': 1}],
         ), (
             [{'a': '1'}],
             {'a': Use(int)},
             [{'a': 1}],
+        ), (
+            [{'a': 1}],
+            {str: int},
+            [{'a': 1}],
+        ), (
+            # skip 'id' during validation.
+            [{'a': 1, 'id': 'x'}],
+            {str: int},
+            [{'a': 1, 'id': 'x'}],
+        ), (
+            # skip 'marks' during validation.
+            [{'a': 1, 'marks': 'skip'}],
+            {str: int},
+            [{'a': 1, 'marks': 'skip'}],
         )
 ])
 def test_validate_test_params(test_params, schema, expected):
@@ -127,9 +141,13 @@ def test_validate_test_params(test_params, schema, expected):
             {'a': int},
             "(?s)'a': 'b'.*'b' should be instance of 'int'",
         ), (
-            [{'a': 'b'}],
-            {'b': str},
-            "(?s)'a': 'b'.*Missing key: 'b'",
+            [{'a': 1}],
+            {'b': int},
+            "(?s)'a': 1.*Missing key: 'b'",
+        ), (
+            [{'a': 1, 'b': 'c'}],
+            {str: int},
+            "(?s)'a': 1.*'b': 'c'.*'c' should be instance of 'int'",
         )
 ])
 def test_validate_test_params_err(test_params, schema, message):

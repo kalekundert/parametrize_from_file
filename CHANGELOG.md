@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.0 (2020-12-04)
+### Feature
+* Rename the 'key' argument ([`25d7879`](https://github.com/kalekundert/parametrize_from_file/commit/25d7879160c46a1b3d63eb3cad37e184e2c89144))
+
 ## v0.1.1 (2020-12-04)
 ### Fix
 * Don't apply the schema to 'id' and 'marks' ([`e18e931`](https://github.com/kalekundert/parametrize_from_file/commit/e18e931749cf83370a88ebadf4a587e07566b41e))

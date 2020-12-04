@@ -32,7 +32,7 @@ LOADERS = {
         '.nt': nt.load,
 }
 
-def parametrize_from_file(rel_path=None, test_key=None, schema=None):
+def parametrize_from_file(rel_path=None, key=None, schema=None):
     """
     Parametrize a test function with values read from a structured data file.
 
@@ -43,7 +43,7 @@ def parametrize_from_file(rel_path=None, test_key=None, schema=None):
             have the same base name as the test file and one of the extensions 
             listed in the file format table below.
 
-        test_key (str):
+        key (str):
             The key that will be used to access the parameters specifically for 
             this test from the data structure loaded from the parameters file.  The 
             default is to use the name of the decorated function.  See below for 
@@ -201,7 +201,7 @@ def parametrize_from_file(rel_path=None, test_key=None, schema=None):
             #     function.
 
             suite_params = _load_and_cache_suite_params(param_path)
-            test_params = _get_test_params(suite_params, test_key or f.__name__)
+            test_params = _get_test_params(suite_params, key or f.__name__)
             test_params = _validate_test_params(test_params, schema)
             keys, values = _init_parametrize_args(test_params)
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import parametrize_from_file
-from pytest import approx
 from vector import Vector, dot
-from schema import Use
+from pytest import approx
+from voluptuous import Schema
 
 local_eval = lambda x: eval(x)
 
-@parametrize_from_file(schema={str: Use(local_eval)})
+@parametrize_from_file(schema=Schema({str: local_eval}))
 def test_dot(a, b, expected):
     assert dot(a, b) == approx(expected)
 

@@ -16,7 +16,6 @@ requires = [
   'tidyexc',
   'pytest',
   'more_itertools',
-  'schema',
 ]
 classifiers = [
   'Programming Language :: Python :: 3',
@@ -28,6 +27,7 @@ test = [
   'pytest',
   'pytest-cov',
   'coveralls',
+  'voluptuous',
 ]
 doc = [
   'sphinx',

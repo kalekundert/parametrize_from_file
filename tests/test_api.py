@@ -3,7 +3,7 @@
 import pytest
 import parametrize_from_file as pff
 from unittest.mock import Mock
-from schema import Use
+from voluptuous import Schema
 from pathlib import Path
 
 pytest_plugins = ['pytester']
@@ -94,37 +94,29 @@ def test_get_test_params_err(suite_params, test_name, message):
 @pytest.mark.parametrize(
         'test_params, schema, expected', [(
             [],
-            None,
+            Schema({'a': int}),
             [],
         ), (
             [{'a': 1}],
-            None,
-            [{'a': 1}],
-        ), (
-            [],
-            {'a': int},
-            [],
-        ), (
-            [{'a': 1}],
-            {'a': int},
+            Schema({'a': int}),
             [{'a': 1}],
         ), (
             [{'a': '1'}],
-            {'a': Use(int)},
+            Schema({'a': eval}),
             [{'a': 1}],
         ), (
             [{'a': 1}],
-            {str: int},
+            Schema({str: int}),
             [{'a': 1}],
         ), (
             # skip 'id' during validation.
             [{'a': 1, 'id': 'x'}],
-            {str: int},
+            Schema({str: int}),
             [{'a': 1, 'id': 'x'}],
         ), (
             # skip 'marks' during validation.
             [{'a': 1, 'marks': 'skip'}],
-            {str: int},
+            Schema({str: int}),
             [{'a': 1, 'marks': 'skip'}],
         )
 ])
@@ -133,21 +125,25 @@ def test_validate_test_params(test_params, schema, expected):
 
 @pytest.mark.parametrize(
         'test_params, schema, message', [(
+            'a',
+            Schema({'a': int}),
+            "expected list of dicts, got 'a'",
+        ), (
             ['a'],
-            {'a': int},
-            "(?s)'a'.*'a' should be instance of 'dict'",
+            Schema({'a': int}),
+            "expected dict, got 'a'",
         ), (
             [{'a': 'b'}],
-            {'a': int},
-            "(?s)'a': 'b'.*'b' should be instance of 'int'",
+            Schema({'a': int}),
+            "test case failed schema validation",
         ), (
             [{'a': 1}],
-            {'b': int},
-            "(?s)'a': 1.*Missing key: 'b'",
+            Schema({'b': int}),
+            "test case failed schema validation",
         ), (
             [{'a': 1, 'b': 'c'}],
-            {str: int},
-            "(?s)'a': 1.*'b': 'c'.*'c' should be instance of 'int'",
+            Schema({str: int}),
+            "test case failed schema validation",
         )
 ])
 def test_validate_test_params_err(test_params, schema, message):
@@ -263,9 +259,9 @@ def test_parametrize_from_file(testdir):
     """)
     testdir.makefile('.py', """\
             import parametrize_from_file
-            from schema import Use
+            from voluptuous import Schema
 
-            @parametrize_from_file(schema={str: Use(eval)})
+            @parametrize_from_file(schema=Schema({str: eval}))
             def test_addition(a, b, c):
                 assert a + b == c
 

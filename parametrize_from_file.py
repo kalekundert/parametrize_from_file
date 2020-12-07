@@ -15,6 +15,7 @@ from textwrap import indent
 from more_itertools import first
 from schema import Schema, SchemaError
 from tidyexc import Error
+from copy import copy
 
 def _load_json(path):
     with open(path) as f:
@@ -32,39 +33,41 @@ LOADERS = {
         '.nt': nt.load,
 }
 
-def parametrize_from_file(rel_path=None, key=None, schema=None):
+def parametrize_from_file(path=None, key=None, schema=lambda x: x):
     """
     Parametrize a test function with values read from a structured data file.
 
     Arguments:
-        rel_path (str,pathlib.Path):
+        path (str,pathlib.Path):
             The path to the parameter file, relative to the directory containing 
             the test file.  By default, the parameter file will be assumed to 
             have the same base name as the test file and one of the extensions 
             listed in the file format table below.
 
         key (str):
-            The key that will be used to access the parameters specifically for 
-            this test from the data structure loaded from the parameters file.  The 
-            default is to use the name of the decorated function.  See below for 
-            more detail about the structure of the parameters file.
+            The key that will be used to identify the parameters affiliated 
+            with the decorated test function.  The default is to use the name 
+            of the test function.  See below for more detail about the 
+            structure of the parameters file.
 
-        schema (dict):
-            A schema that can be used to validate (and potentially type-cast) 
-            each set of parameters.  The schema is validated using the schema_ 
-            library, so follow the link for details on the schema format.  No 
-            validation is done by default.
+        schema (callable):
+            A function that will be used to validate and/or transform each set 
+            of parameters.  The function should have the following signature::
 
-            The most common use case for this argument is to cast test 
-            parameters into useful types.  This is done by including 
-            `schema.Use`_ in the schema.  For example, the following schema 
-            will evaluate every parameter as a python object::
+                def schema(params: Dict[str: Any]) -> Dict[str, Any]:
 
-                {str: Use(eval)}
+            The argument will be a single set of parameters, exactly as they 
+            were read from the file.  The return value will be used to actually 
+            parametrize the test function.  It's ok to add or remove keys from 
+            the input dictionary, but keep in mind that every set of parameters 
+            for a single test function must ultimately have the same keys.
 
-    The structured data file identified by the argument (subsequently referred 
-    to as the "parameter file") must be in one of the following formats, and 
-    must have a corresponding file extension:
+            While it's possible to write your own schema functions, this 
+            argument is meant to be used in conjunction with a schema library 
+            such as voluptuous_ or schema_.
+
+    The parameter file must be in one of the following formats, and must have a 
+    corresponding file extension:
 
     ===========  ============
     Format       Extensions
@@ -110,7 +113,9 @@ def parametrize_from_file(rel_path=None, key=None, schema=None):
     :param str id:
       A name that will be used by pytest to refer to this particular set of 
       parameters, e.g. if they cause a test failure.  If not given, the 
-      parameter set will be assigned a numeric id that counts up from 1.
+      parameter set will be assigned a numeric id that counts up from 1.  It's 
+      ok for multiple test cases to have the same id; pytest will distinguish 
+      them by appending a numeric id that counts up from 0.
     
     :param str,list marks:
       One or more :doc:`marks <mark>` (like `skip <pytest.mark.skip>` or `xfail 
@@ -146,12 +151,12 @@ def parametrize_from_file(rel_path=None, key=None, schema=None):
 
             # test_utils.py
             import parametrize_from_file
-            from schema import Use
+            from voluptuous import Schema
 
             def is_even(x):
                 return x % 2 == 0
 
-            @parametrize_from_file(schema={str: Use(eval)})
+            @parametrize_from_file(schema=Schema({str: eval}))
             def test_is_even(value, expected):
                 assert is_even(value) == expected
 
@@ -159,8 +164,8 @@ def parametrize_from_file(rel_path=None, key=None, schema=None):
     .. _YAML: https://yaml.org/
     .. _TOML: https://toml.io/en/
     .. _NestedText: https://nestedtext.org/en/latest/
+    .. _voluptuous: https://github.com/alecthomas/voluptuous
     .. _schema: https://github.com/keleshev/schema
-    .. _`schema.Use`: https://github.com/keleshev/schema#validatables
     """
 
     def decorator(f):
@@ -170,7 +175,7 @@ def parametrize_from_file(rel_path=None, key=None, schema=None):
             test_path = Path(module.__file__)
 
             ConfigError.push_info(
-                    "test function: {test_module.__name__}.{test_func.__qualname__}()",
+                    "test function: {test_func.__qualname__}()",
                     test_func=f,
                     test_module=module,
             )
@@ -179,7 +184,7 @@ def parametrize_from_file(rel_path=None, key=None, schema=None):
                     test_path=test_path,
             )
 
-            param_path = _find_param_path(test_path, rel_path)
+            param_path = _find_param_path(test_path, path)
 
             ConfigError.push_info(
                     "parameter file: {param_path}",
@@ -210,8 +215,8 @@ def parametrize_from_file(rel_path=None, key=None, schema=None):
         finally:
             ConfigError.clear_info()
 
-    if callable(rel_path):
-        f, rel_path = rel_path, None
+    if callable(path):
+        f, path = path, None
         return decorator(f)
     else:
         return decorator
@@ -298,41 +303,51 @@ def _get_test_params(suite_params, test_name):
         raise err from None
 
 def _validate_test_params(test_params, schema):
-    if schema is None:
-        return test_params
-
-    validate = Schema(schema).validate
     validated_params = []
 
     def stash_id_marks(obj):
+        params = {}
         stash = {}
-        stash_item(obj, 'id', stash)
-        stash_item(obj, 'marks', stash)
-        return stash
-    def stash_item(obj, key, stash):
+
+        for key, value in obj.items():
+            if key in ('id', 'marks'):
+                stash[key] = value
+            else:
+                params[key] = value
+
+        return params, stash
+
+    if not isinstance(test_params, list):
+        raise ConfigError(
+                "expected list of dicts, got {params!r}",
+                params=test_params,
+        )
+
+    for case_params in test_params:
+        if not isinstance(case_params, dict):
+            raise ConfigError(
+                    "expected dict, got {params!r}",
+                    params=case_params,
+            )
+
+        params, stash = stash_id_marks(case_params)
+
         try:
-            stash[key] = obj.pop(key)
-        except:
-            pass
+            params = schema(params)
+        except Exception as err1:
+            err2 = ConfigError(
+                    params=case_params,
+            )
+            err2.brief = "test case failed schema validation"
+            err2.info += lambda e: (
+                    "test case:\n" +
+                    _format_case_params(e.params)
+            )
+            err2.blame += str(err1)
+            raise err2 from err1
 
-    try:
-        for case_params in test_params:
-            stash = stash_id_marks(case_params)
-            p = validate(case_params)
-            p.update(stash)
-            validated_params.append(p)
-
-    except SchemaError as orig:
-        err = ConfigError(
-                params=case_params,
-        )
-        err.brief = "test case failed schema validation"
-        err.info += lambda e: (
-                "test case:\n" +
-                indent(_format_case_params(e.params), "    ")
-        )
-        err.blame += orig.code.split('\n')
-        raise err from orig
+        params.update(stash)
+        validated_params.append(params)
 
     return validated_params
 

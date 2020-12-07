@@ -13,7 +13,6 @@ from functools import lru_cache
 from contextlib import contextmanager
 from textwrap import indent
 from more_itertools import first
-from schema import Schema, SchemaError
 from tidyexc import Error
 from copy import copy
 

@@ -263,8 +263,8 @@ def _find_param_path(test_path, rel_path):
             )
             err.brief = "can't find parametrization file"
             err.info += "no relative path specified"
-            err.blame += lambda e: '\n    '.join([
-                "none of the following paths exist:",
+            err.blame += lambda e: '\n'.join([
+                "none of the following default paths exist:",
                 *map(str, e.paths),
             ])
             raise err from None

@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.0 (2020-12-07)
+### Feature
+* Accept any callable as the schema ([`2f3d1e1`](https://github.com/kalekundert/parametrize_from_file/commit/2f3d1e15129ebc70e7d5b3a2acbda3e5d7186a4a))
+
 ## v0.2.0 (2020-12-04)
 ### Feature
 * Rename the 'key' argument ([`25d7879`](https://github.com/kalekundert/parametrize_from_file/commit/25d7879160c46a1b3d63eb3cad37e184e2c89144))

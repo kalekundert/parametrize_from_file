@@ -4,7 +4,7 @@
 Parameterize unit tests with values from YAML, TOML, and NT files.
 """
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 import sys, pytest, inspect
 import json, toml, yaml, nestedtext as nt

@@ -2,6 +2,7 @@
 
 import pytest
 import parametrize_from_file as pff
+import parametrize_from_file.parametrize as pffp
 from unittest.mock import Mock
 from voluptuous import Schema
 from pathlib import Path
@@ -29,7 +30,7 @@ TEST_DIR = Path(__file__).parent
 ])
 def test_find_param_path(test_path, rel_path, expected):
     root = TEST_DIR / 'test_find_param_path'
-    param_path = pff._find_param_path(root/test_path, rel_path)
+    param_path = pffp._find_param_path(root/test_path, rel_path)
     assert param_path == root/expected
 
 @pytest.mark.parametrize(
@@ -47,30 +48,35 @@ def test_find_param_path(test_path, rel_path, expected):
 def test_find_param_path_err(test_path, rel_path, message):
     root = TEST_DIR / 'test_find_param_path'
     with pytest.raises(pff.ConfigError, match=message):
-        pff._find_param_path(root/test_path, rel_path)
+        pffp._find_param_path(root/test_path, rel_path)
 
-@pytest.mark.parametrize('suffix', pff.LOADERS.keys())
+@pytest.mark.parametrize('suffix', pffp.get_loaders().keys())
 def test_load_suite_params(suffix):
     root = TEST_DIR / 'test_load_and_cache_suite_params'
-    suite_params = pff._load_and_cache_suite_params(root / f'ok{suffix}')
+    suite_params = pffp._load_and_cache_suite_params(root / f'ok{suffix}')
     assert suite_params == {'a': 'b'}
 
-@pytest.mark.parametrize('suffix', pff.LOADERS.keys())
+@pytest.mark.parametrize('suffix', pffp.get_loaders().keys())
 def test_load_suite_params_err(suffix):
     root = TEST_DIR / 'test_load_and_cache_suite_params'
     message = "failed to load parametrization file"
 
     with pytest.raises(pff.ConfigError, match=message):
-        pff._load_and_cache_suite_params(root / f'err{suffix}')
+        pffp._load_and_cache_suite_params(root / f'err{suffix}')
 
-def test_cache_suite_params(monkeypatch):
+def test_cache_suite_params():
     m = Mock()
-    monkeypatch.setattr(pff, 'LOADERS', {'.xyz': m})
-    assert m.call_count == 0
+    pff.add_loader('.xyz', m)
 
-    for i in range(2):
-        pff._load_and_cache_suite_params(Path('dummy.xyz'))
-        assert m.call_count == 1
+    try:
+        assert m.call_count == 0
+
+        for i in range(2):
+            pffp._load_and_cache_suite_params(Path('dummy.xyz'))
+            assert m.call_count == 1
+
+    finally:
+        pff.drop_loader('.xyz')
 
 @pytest.mark.parametrize(
         'suite_params, test_name, expected', [(
@@ -78,7 +84,7 @@ def test_cache_suite_params(monkeypatch):
         ),
 ])
 def test_get_test_params(suite_params, test_name, expected):
-    test_params = pff._get_test_params(suite_params, test_name)
+    test_params = pffp._get_test_params(suite_params, test_name)
     assert test_params == expected
 
 @pytest.mark.parametrize(
@@ -89,7 +95,7 @@ def test_get_test_params(suite_params, test_name, expected):
 ])
 def test_get_test_params_err(suite_params, test_name, message):
     with pytest.raises(pff.ConfigError, match=message):
-        pff._get_test_params(suite_params, test_name)
+        pffp._get_test_params(suite_params, test_name)
 
 @pytest.mark.parametrize(
         'test_params, schema, expected', [(
@@ -121,7 +127,7 @@ def test_get_test_params_err(suite_params, test_name, message):
         )
 ])
 def test_validate_test_params(test_params, schema, expected):
-    assert pff._validate_test_params(test_params, schema) == expected
+    assert pffp._validate_test_params(test_params, schema) == expected
 
 @pytest.mark.parametrize(
         'test_params, schema, message', [(
@@ -148,7 +154,7 @@ def test_validate_test_params(test_params, schema, expected):
 ])
 def test_validate_test_params_err(test_params, schema, message):
     with pytest.raises(pff.ConfigError, match=message):
-        pff._validate_test_params(test_params, schema)
+        pffp._validate_test_params(test_params, schema)
 
 @pytest.mark.parametrize(
         'test_params, expected', [(
@@ -172,7 +178,7 @@ def test_validate_test_params_err(test_params, schema, message):
         ),
 ])
 def test_check_test_param_keys(test_params, expected):
-    assert pff._check_test_params_keys(test_params) == expected
+    assert pffp._check_test_params_keys(test_params) == expected
 
 @pytest.mark.parametrize(
         'test_params', [
@@ -183,8 +189,7 @@ def test_check_test_param_keys(test_params, expected):
 def test_check_test_param_keys_err(test_params):
     message = "every test case must specify the same parameters"
     with pytest.raises(pff.ConfigError, match=message):
-        pff._check_test_params_keys(test_params)
-
+        pffp._check_test_params_keys(test_params)
 
 @pytest.mark.parametrize(
         'case_params, expected', [(
@@ -199,7 +204,7 @@ def test_check_test_param_keys_err(test_params):
         )
 ])
 def test_format_case_params(case_params, expected):
-    assert pff._format_case_params(case_params) == expected
+    assert pffp._format_case_params(case_params) == expected
 
 @pytest.mark.parametrize(
         'test_params, keys, values', [(
@@ -233,7 +238,7 @@ def test_format_case_params(case_params, expected):
         ),
 ])
 def test_init_parametrize_arguments(test_params, keys, values):
-    assert pff._init_parametrize_args(test_params) == (keys, values)
+    assert pffp._init_parametrize_args(test_params) == (keys, values)
 
 def test_parametrize_from_file(testdir):
     testdir.makefile('.nt', """\

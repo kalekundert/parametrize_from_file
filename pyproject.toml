@@ -16,6 +16,7 @@ requires = [
   'tidyexc',
   'pytest',
   'more_itertools',
+  'contextlib2',
 ]
 classifiers = [
   'Programming Language :: Python :: 3',
@@ -28,6 +29,7 @@ test = [
   'pytest-cov',
   'coveralls',
   'voluptuous',
+  'numpy',
 ]
 doc = [
   'sphinx',
@@ -42,10 +44,10 @@ doc = [
 'Test Coverage' = 'https://coveralls.io/github/kalekundert/parametrize_from_file'
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --doctest-glob='*.rst'"
+addopts = "--ignore docs --doctest-modules --doctest-glob='*.rst'"
 doctest_optionflags = 'NORMALIZE_WHITESPACE'
 markers = ["slow"]
 
 [tool.semantic_release]
-version_variable = 'parametrize_from_file.py:__version__'
+version_variable = 'parametrize_from_file/__init__.py:__version__'
 build_command = 'python -m pip install flit && flit build'

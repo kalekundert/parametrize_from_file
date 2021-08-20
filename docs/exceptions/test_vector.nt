@@ -1,0 +1,10 @@
+test_normalize:
+  -
+    given: Vector(1, 0)
+    expected: Vector(1, 0)
+  -
+    given: Vector(0, 2)
+    expected: Vector(0, 1)
+  -
+    given: Vector(0, 0)
+    error: NullVectorError

@@ -2,5 +2,12 @@
 API reference
 *************
 
-.. currentmodule:: parametrize_from_file
-.. autofunction:: parametrize_from_file
+.. autosummary::
+   :toctree: api
+
+   parametrize_from_file
+   parametrize_from_file.Namespace
+   parametrize_from_file.voluptuous.Namespace
+   parametrize_from_file.add_loader
+   parametrize_from_file.drop_loader
+   parametrize_from_file.ConfigError

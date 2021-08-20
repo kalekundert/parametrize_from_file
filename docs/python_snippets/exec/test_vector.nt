@@ -1,0 +1,18 @@
+test_to_vector:
+  -
+    given: obj = Vector(1, 2)
+    expected: Vector(1, 2)
+  -
+    given: obj = 2, 3
+    expected: Vector(2, 3)
+  -
+    given:
+      > class MyObj:
+      >     pass
+      >
+      > obj = MyObj()
+      > obj.x = 3
+      > obj.y = 1
+    expected:
+      > Vector(3, 1)
+

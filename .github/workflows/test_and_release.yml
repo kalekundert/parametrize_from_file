@@ -32,7 +32,8 @@ jobs:
           flit install -s --extras=test
       - name: Run test suite
         run: |
-          pytest tests --cov parametrize_from_file
+          pytest --cov parametrize_from_file
+          docs/test_docs.sh
       - name: Report test coverage
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}

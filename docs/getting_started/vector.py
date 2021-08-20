@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 class Vector:
 
     def __init__(self, x, y):

@@ -15,4 +15,3 @@ test_dot:
     a: Vector(1, 1)
     b: Vector(1, 2)
     expected: 3
-

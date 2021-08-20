@@ -1,0 +1,18 @@
+test_dot:
+  -
+    a: [0, 0]
+    b: [1, 2]
+    expected: 0
+  -
+    a: [1, 0]
+    b: [1, 2]
+    expected: 1
+  -
+    a: [0, 1]
+    b: [1, 2]
+    expected: 2
+  -
+    a: [1, 1]
+    b: [1, 2]
+    expected: 3
+

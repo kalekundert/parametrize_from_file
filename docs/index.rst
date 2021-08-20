@@ -1,7 +1,9 @@
 .. include:: ../README.rst
+   :end-before: Refer
 
 .. toctree::
    :hidden:
 
-   basic_usage
+   getting_started
+   examples
    api_reference

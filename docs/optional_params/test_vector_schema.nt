@@ -1,0 +1,18 @@
+test_from_angle:
+  -
+    angle: 0
+    expected: Vector(1, 0)
+  -
+    angle: 45
+    expected: Vector(1/sqrt(2), 1/sqrt(2))
+  -
+    angle: 90
+    expected: Vector(0, 1)
+  -
+    angle: pi / 2
+    unit: rad
+    expected: Vector(0, 1)
+  -
+    angle: 0
+    magnitude: 2
+    expected: Vector(2, 0)

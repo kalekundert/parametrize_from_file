@@ -1,10 +1,22 @@
-***********
-Basic usage
-***********
+***************
+Getting started
+***************
+
+Rationale
+=========
+Parametrizing your tests—in other words, separating the test data from the test 
+code—is frequently a good idea.  It makes it easier to add new test cases, 
+while also making it easier to read and understand the test code.
+
+|PFF| provides a convenient way to parametrize tests when using the popular 
+pytest_ framework.  The central idea is to keep the parameters in their own 
+files, separate from the test code.  This prevents long lists of parameters 
+from dwarfing your test code, and often allows parameters to be specified more 
+clearly and succinctly than would be possible in python.  
 
 Installation
 ============
-Install :mod:`parametrize_from_file` using ``pip``:
+Install |PFF| using ``pip``:
 
 .. code-block:: console
 
@@ -15,20 +27,21 @@ Install :mod:`parametrize_from_file` using ``pip``:
 
 Writing the parameters
 ======================
-In this tutorial, we'll write tests for a dot product function meant to work 
-with a simple 2D vector class:
+In this tutorial, we'll write some tests for a dot product function meant to 
+work with a simple 2D vector class:
 
-.. literalinclude:: examples/vector.py
+.. literalinclude:: getting_started/vector.py
    :caption: vector.py
 
 We'll specify the parameters for the tests in their own file.  This file can be 
-JSON_, YAML_, TOML_, or NestedText_.  I recommend NestedText_, because its 
-simple and unambiguous syntax makes it easy to specify the kinds of values used 
-in tests (which often look a lot like code).  The other formats tend to require 
-lots of quoting or escaping for such values:
+JSON_, YAML_, TOML_, or NestedText_.  We'll use YAML_ for this example, since 
+it's simple and well-known, but I'll note that NestedText_ is generally a 
+better choice for real tests (for the reasons discussed :doc:`here 
+<python_snippets>`).
 
-.. literalinclude:: examples/test_vector.nt
-   :caption: test_vector.nt
+.. literalinclude:: getting_started/test_vector.yml
+   :caption: test_vector.yml
+   :language: yaml
 
 Note that the parameters are indexed by test function (``test_dot`` in this 
 case).  This allows parameters for multiple test functions to be specified in a 
@@ -43,17 +56,7 @@ The function should accept an argument for each parameter, and the name of the
 argument should match the name of the parameter in the file.  Decorate the test 
 function directly with the :mod:`parametrize_from_file` module.  
 
-Note that in the parameter file shown above, the parameters are specified using 
-python syntax.  This is a very common thing to do, since test inputs and 
-outputs frequently need to be python objects.  We can easily convert these 
-parameters to objects by using the *schema* argument as shown in the example 
-below.  This schema specifies that `eval` should be called on all parameters 
-before they are provided to the test function.  The helper lambda function is 
-used to ensure that `eval` is called in the scope where *Vector* is defined.  
-See the :doc:`api_reference` for a complete description 
-of this argument.
-
-.. literalinclude:: examples/test_vector.py
+.. literalinclude:: getting_started/test_vector.py
    :caption: test_vector.py
 
 Running the tests
@@ -75,7 +78,3 @@ four tests are run:
   ============================== 4 passed in 0.15s ===============================
 
 .. _`semantic versioning`: https://semver.org/
-.. _JSON: https://www.json.org/json-en.html
-.. _YAML: https://yaml.org/
-.. _TOML: https://toml.io/en/
-.. _NestedText: https://nestedtext.org/en/latest/

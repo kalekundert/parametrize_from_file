@@ -1,40 +1,19 @@
 #!/usr/bin/env python3
 
-"""
-Parameterize unit tests with values from YAML, TOML, and NT files.
-"""
+import pytest
+import inspect
 
-__version__ = '0.3.0'
-
-import sys, pytest, inspect
-import json, toml, yaml, nestedtext as nt
+from .loaders import get_loaders
+from .errors import ConfigError
 from pathlib import Path
 from functools import lru_cache
-from contextlib import contextmanager
 from textwrap import indent
 from more_itertools import first
-from tidyexc import Error
 from copy import copy
-
-def _load_json(path):
-    with open(path) as f:
-        return json.load(f)
-
-def _load_yml(path):
-    with open(path) as f:
-        return yaml.safe_load(f)
-
-LOADERS = {
-        '.json': _load_json,
-        '.yaml': _load_yml,
-        '.yml': _load_yml,
-        '.toml': toml.load,
-        '.nt': nt.load,
-}
 
 def parametrize_from_file(path=None, key=None, schema=lambda x: x):
     """
-    Parametrize a test function with values read from a structured data file.
+    Parametrize a test function with values read from a config file.
 
     Arguments:
         path (str,pathlib.Path):
@@ -49,7 +28,7 @@ def parametrize_from_file(path=None, key=None, schema=lambda x: x):
             of the test function.  See below for more detail about the 
             structure of the parameters file.
 
-        schema (callable):
+        schema (collections.abc.Callable):
             A function that will be used to validate and/or transform each set 
             of parameters.  The function should have the following signature::
 
@@ -77,16 +56,15 @@ def parametrize_from_file(path=None, key=None, schema=lambda x: x):
     NestedText_  .nt
     ===========  ============
 
-    The top-level data structure in the parameter file should be a dictionary, 
-    which can contain parameters for any number of tests.  The keys of this 
-    dictionary should be the names of the individual tests, and the values 
-    should be lists of parameter sets to provide to that test.  Each parameter 
-    set should be a dictionary, with the keys being the names of the parameters 
-    and the values being the parameters themselves.  Each parameter set within 
-    a list must have the same set of keys (except for the specially-treated 
-    *id* and *marks* keys, described below).  There are no restrictions on the 
-    values of the parameters (e.g. different parameter sets within the same 
-    list can have values of different types).
+    The top-level data structure in the parameter file should be a dictionary.  
+    The keys of this dictionary should be the names of the individual tests, 
+    and the values should be lists of parameter sets to provide to that test.  
+    Each parameter set should be a dictionary, with the keys being the names of 
+    the parameters and the values being the parameters themselves.  Each 
+    parameter set within a list must have the same set of keys (except for the 
+    specially-treated *id* and *marks* keys, described below).  There are no 
+    restrictions on the values of the parameters (e.g. different parameter sets 
+    within the same list can have values of different types).
 
     For example, here is a valid YAML_ parameter file.  This file specifies two 
     sets of parameters for each of two tests:
@@ -158,13 +136,6 @@ def parametrize_from_file(path=None, key=None, schema=lambda x: x):
             @parametrize_from_file(schema=Schema({str: eval}))
             def test_is_even(value, expected):
                 assert is_even(value) == expected
-
-    .. _JSON: https://www.json.org/json-en.html
-    .. _YAML: https://yaml.org/
-    .. _TOML: https://toml.io/en/
-    .. _NestedText: https://nestedtext.org/en/latest/
-    .. _voluptuous: https://github.com/alecthomas/voluptuous
-    .. _schema: https://github.com/keleshev/schema
     """
 
     def decorator(f):
@@ -233,17 +204,17 @@ def _find_param_path(test_path, rel_path):
             err.blame += "'{param_path}' does not exist."
             raise err
 
-        if param_path.suffix not in LOADERS:
+        if param_path.suffix not in get_loaders():
             err = ConfigError(
                     rel_path=rel_path,
                     param_path=param_path,
-                    known_extensions=LOADERS.keys(),
+                    known_extensions=get_loaders().keys(),
             )
             err.brief = "parametrization file must have a recognized extension"
-            err.info += lambda e: '\n'.join(
+            err.info += lambda e: '\n'.join((
                     "the following extensions are recognized:",
                     *e.known_extensions,
-            )
+            ))
             err.blame += "the given extension is not recognized: {param_path.suffix}"
             raise err
 
@@ -251,7 +222,7 @@ def _find_param_path(test_path, rel_path):
     else:
         param_path_candidates = [
                 test_path.with_suffix(x)
-                for x in LOADERS
+                for x in get_loaders()
         ]
         try:
             param_path = first(
@@ -274,8 +245,8 @@ def _find_param_path(test_path, rel_path):
 @lru_cache()
 def _load_and_cache_suite_params(path):
     # This should be guaranteed by _find_param_path().
-    assert path.suffix in LOADERS
-    loader = LOADERS[path.suffix]
+    assert path.suffix in get_loaders()
+    loader = get_loaders()[path.suffix]
 
     try:
         return loader(path)
@@ -422,16 +393,3 @@ def _format_case_params(case_params):
     except:
         return repr(case_params)
 
-class ConfigError(Error):
-    pass
-
-# Hack to make the module directly usable as a decorator.  Only works for 
-# python 3.5 or higher.  See this Stack Overflow post:
-# https://stackoverflow.com/questions/1060796/callable-modules
-
-class CallableModule(sys.modules[__name__].__class__):
-
-    def __call__(self, *args, **kwargs):
-        return parametrize_from_file(*args, **kwargs)
-
-sys.modules[__name__].__class__ = CallableModule

@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.0 (2021-08-20)
+### Feature
+* Add the Namespace eval/exec/error helper ([`e0c8523`](https://github.com/kalekundert/parametrize_from_file/commit/e0c85238997bd521c361463e6794e2e7ea299a0d))
+
+### Documentation
+* Slightly clarify error messages ([`7393ee0`](https://github.com/kalekundert/parametrize_from_file/commit/7393ee072ecdb8c9cb960be0d7abc8e9ecdcd212))
+
 ## v0.3.0 (2020-12-07)
 ### Feature
 * Accept any callable as the schema ([`2f3d1e1`](https://github.com/kalekundert/parametrize_from_file/commit/2f3d1e15129ebc70e7d5b3a2acbda3e5d7186a4a))

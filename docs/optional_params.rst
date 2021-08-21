@@ -4,7 +4,7 @@ Optional parameters
 
 .. note::
 
-   These examples build on the concepts from the `python_snippets` tutorial.
+   This tutorial build on the concepts from the `python_snippets` tutorial.
 
 Many tests have parameters that don't really need to be specified for every 
 case, e.g. parameters with reasonable defaults.  Specifying such parameters 

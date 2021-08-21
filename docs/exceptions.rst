@@ -3,13 +3,11 @@ Exceptions
 **********
 
 Testing functions that are expected to raise exceptions for some inputs is a 
-very common task.  When writing parametrized tests, it's nice to be able to 
-test both valid and invalid inputs with the same test function.  The 
-alternative is to write separate test functions for the valid and invalid 
-inputs, but this adds boilerplate and often means duplicating the code that 
-helps setup the test.  The examples on this page will show how to more cleanly 
-test for exceptions.  The key is a `function <voluptuous.Namespace.error_or>` 
-that:
+very common task.  The usual approach is to write separate test functions for 
+the valid and invalid inputs, but this adds boilerplate and often means 
+duplicating the code that helps setup the test.  Instead, this tutorial will 
+show an elegant way to use the same test function for all inputs.  The key is a 
+`helper function <voluptuous.Namespace.error_or>` that:
 
 - Produces a schema that accepts either an expected value or an expected error.
 - When that schema is evaluated, creates a context manager that can be used to 

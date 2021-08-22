@@ -11,16 +11,22 @@ from textwrap import indent
 from more_itertools import first
 from copy import copy
 
-def parametrize_from_file(path=None, key=None, schema=lambda x: x):
+def parametrize_from_file(
+        path=None,
+        key=None,
+        *,
+        preprocess=None,
+        schema=None,
+    ):
     """
     Parametrize a test function with values read from a config file.
 
     Arguments:
         path (str,pathlib.Path):
-            The path to the parameter file, relative to the directory containing 
-            the test file.  By default, the parameter file will be assumed to 
-            have the same base name as the test file and one of the extensions 
-            listed in the file format table below.
+            The path to the parameter file, relative to the directory 
+            containing the test file.  By default, the parameter file will be 
+            assumed to have the same base name as the test file and one of the 
+            extensions listed in the file format table below.
 
         key (str):
             The key that will be used to identify the parameters affiliated 
@@ -28,17 +34,35 @@ def parametrize_from_file(path=None, key=None, schema=lambda x: x):
             of the test function.  See below for more detail about the 
             structure of the parameters file.
 
+        preprocess (collections.abc.Callable):
+            A function that will be allowed to modify the list of test cases 
+            loaded from the parameter file, e.g. to programmatically generate 
+            test cases.  The function should have the following signature::
+
+                def preprocess(params: Any) -> List[Dict[str, Any]]
+
+            The argument will be the value associated with the given key in the 
+            parameter file.  Typically this value is a list, but it could be 
+            anything.  The return value must be a list of dicts.  Each of these 
+            dicts will be further processed by the *schema* argument before 
+            being used to parametrize the test function.  Note that while 
+            *schema* does not get access to the special *id* and *marks* 
+            fields, this function does.
+
         schema (collections.abc.Callable):
             A function that will be used to validate and/or transform each set 
             of parameters.  The function should have the following signature::
 
                 def schema(params: Dict[str: Any]) -> Dict[str, Any]:
 
-            The argument will be a single set of parameters, exactly as they 
-            were read from the file.  The return value will be used to actually 
-            parametrize the test function.  It's ok to add or remove keys from 
-            the input dictionary, but keep in mind that every set of parameters 
-            for a single test function must ultimately have the same keys.
+            The argument will be the set of parameters for a single test case, 
+            excluding the special *id* and *marks* fields.  The return value 
+            will be used to actually parametrize the test function.  It's ok to 
+            add or remove keys from the input dictionary, but keep in mind that 
+            every set of parameters for a single test function must ultimately 
+            have the same keys.  The schema may also set the *id* and *marks* 
+            fields, but any values set in the file will override those set by 
+            the schema.
 
             While it's possible to write your own schema functions, this 
             argument is meant to be used in conjunction with a schema library 
@@ -177,7 +201,7 @@ def parametrize_from_file(path=None, key=None, schema=lambda x: x):
 
             suite_params = _load_and_cache_suite_params(param_path)
             test_params = _get_test_params(suite_params, key or f.__name__)
-            test_params = _validate_test_params(test_params, schema)
+            test_params = _process_test_params(test_params, preprocess, schema)
             keys, values = _init_parametrize_args(test_params)
 
             return pytest.mark.parametrize(keys, values)(f)
@@ -272,7 +296,21 @@ def _get_test_params(suite_params, test_name):
         err.hints += "make sure the top-level data structure in the parameter file is a dictionary where the keys are the names of test functions, and the values are dictionaries of test parameters."
         raise err from None
 
-def _validate_test_params(test_params_in, schema):
+def _process_test_params(test_params_in, preprocess, schema):
+    if preprocess:
+        test_params_in = preprocess(test_params_in)
+
+    if not isinstance(test_params_in, list):
+        raise ConfigError(
+                lambda e: (
+                    f"expected preprocess to return list of dicts, got {e.params!r}"
+                    if e.preprocess else
+                    f"expected list of dicts, got {e.params!r}"
+                ),
+                params=test_params_in,
+                preprocess=preprocess,
+        )
+
     test_params_out = []
 
     def stash_id_marks(obj):
@@ -287,12 +325,6 @@ def _validate_test_params(test_params_in, schema):
 
         return params, stash
 
-    if not isinstance(test_params_in, list):
-        raise ConfigError(
-                "expected list of dicts, got {params!r}",
-                params=test_params_in,
-        )
-
     for case_params_in in test_params_in:
         if not isinstance(case_params_in, dict):
             raise ConfigError(
@@ -300,29 +332,33 @@ def _validate_test_params(test_params_in, schema):
                     params=case_params_in,
             )
 
-        params, stash = stash_id_marks(case_params_in)
+        if not schema:
+            case_params_out = case_params_in
+        else:
+            params, stash = stash_id_marks(case_params_in)
 
-        try:
-            params = schema(params)
-        except Exception as err1:
-            err2 = ConfigError(
-                    params=case_params_in,
-            )
-            err2.brief = "test case failed schema validation"
-            err2.info += lambda e: (
-                    "test case:\n" +
-                    _format_case_params(e.params)
-            )
-            err2.blame += str(err1)
-            raise err2 from err1
+            try:
+                params = schema(params)
+            except Exception as err1:
+                err2 = ConfigError(
+                        params=case_params_in,
+                )
+                err2.brief = "test case failed schema validation"
+                err2.info += lambda e: (
+                        "test case:\n" +
+                        _format_case_params(e.params)
+                )
+                err2.blame += str(err1)
+                raise err2 from err1
 
-        if not isinstance(params, dict):
-            raise ConfigError(
-                    "expected schema to return dict, got {params!r}",
-                    params=params,
-            )
+            if not isinstance(params, dict):
+                raise ConfigError(
+                        "expected schema to return dict, got {params!r}",
+                        params=params,
+                )
 
-        case_params_out = {**params, **stash}
+            case_params_out = {**params, **stash}
+
         test_params_out.append(case_params_out)
 
     return test_params_out

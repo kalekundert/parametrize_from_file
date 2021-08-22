@@ -4,11 +4,12 @@ import pytest
 import inspect
 
 from .loaders import get_loaders
+from .utils import zip_with_scalars, is_iterable
 from .errors import ConfigError
 from pathlib import Path
 from functools import lru_cache
 from textwrap import indent
-from more_itertools import first
+from more_itertools import first, UnequalIterablesError
 from copy import copy
 
 # suite_params:
@@ -42,11 +43,23 @@ def parametrize_from_file(
             assumed to have the same base name as the test file and one of the 
             extensions listed in the file format table below.
 
+            If multiple paths are specified, the parameters from each will be 
+            loaded and concatenated.  The *key* argument in this case must be 
+            either be a string (meaning: lookup the same key in each file) or a 
+            list of strings with the same length as this argument (meaning: 
+            look up the corresponding key in each file).
+
         key (str,list):
             The key that will be used to identify the parameters affiliated 
             with the decorated test function.  The default is to use the name 
             of the test function.  See below for more detail about the 
             structure of the parameters file.
+
+            If multiple keys are specified, the parameters for each will loaded 
+            and concatenated.  The *path* argument in this case must be either 
+            a single path (meaning: lookup all keys in the same file) or a list 
+            of paths with the same length as this argument (meaning: look up 
+            each key in the corresponding file).
 
         preprocess (collections.abc.Callable):
             A function that will be allowed to modify the list of test cases 
@@ -58,11 +71,12 @@ def parametrize_from_file(
 
             The argument will be the value associated with the given key in the 
             parameter file.  Typically this value is a list, but it could be 
-            anything.  The return value must be a list of dicts.  Each of these 
-            dicts will be further processed by the *schema* argument before 
-            being used to parametrize the test function.  Note that this 
-            function does get access to the special *id* and *marks* fields, 
-            unlike the *schema* function.
+            anything.  If multiple parameter files and/or keys are specified, 
+            this function is called separately on each one.  The return value 
+            must be a list of dicts.  Each of these dicts will be further 
+            processed by the *schema* argument before being used to parametrize 
+            the test function.  Note that this function does get access to the 
+            special *id* and *marks* fields, unlike the *schema* function.
 
         schema (collections.abc.Callable):
             A function that will be used to validate and/or transform each set 
@@ -214,13 +228,13 @@ def load_parameters(
     Load test parameters from a file.
 
     Arguments:
-        path (str, pathlib.Path):
+        path (str, pathlib.Path, list):
             The path to the file containing the parameters.  Unlike with 
             :deco:`parametrize_from_file`, this path is expected to be 
             absolute.  If it's not absolute, it's interpreted relative to the 
-            current working directory
+            current working directory.
 
-        key (str):
+        key (str, list):
             See: :deco:`parametrize_from_file`
 
         preprocess (collections.abc.Callable):
@@ -237,21 +251,46 @@ def load_parameters(
     This function does almost the same thing as :deco:`parametrize_from_file`, 
     except that instead of decorating a test function, it simply returns the 
     parameters it loads.  This might be useful in some unusual situations.  For 
-    example, you could use this function to load test parameters from two or 
-    more different files, merge them, and apply them all to a single test 
-    function.
+    example, you could use this function to load test parameters from a file in 
+    order to merge them with parameters derived from some other source and 
+    apply them all to the same test function.
     """
-    with ConfigError.add_info(
+    test_params = []
+
+    try:
+        for path_i, key_i in zip_with_scalars(path, key, strict=True):
+            with ConfigError.add_info(
                     "parameter file: {param_path}",
-                    param_path=path,
-    ):
-        test_params = _load_test_params(path, key)
-        test_params = _process_test_params(test_params, preprocess, schema)
-        return _init_parametrize_args(test_params)
+                    param_path=path_i,
+            ):
+                p = _load_test_params(path_i, key_i)
+
+                with ConfigError.add_info(
+                        "top-level key: {key}",
+                        key=key_i,
+                ):
+                    p = _process_test_params(p, preprocess, schema)
+                    test_params += p
+
+    except UnequalIterablesError:
+        err = ConfigError(
+                paths=path,
+                keys=key,
+        )
+        err.brief = "must specify matching numbers of paths and keys"
+        err.info += "paths: {paths!r}"
+        err.info += "keys: {keys!r}"
+        raise err
+
+    return _init_parametrize_args(test_params)
+
 
 def _resolve_param_path(test_path, rel_path):
     if rel_path:
-        return test_path.parent / rel_path
+        if is_iterable(rel_path):
+            return [test_path.parent / p for p in rel_path]
+        else:
+            return test_path.parent / rel_path
 
     param_path_candidates = [
             test_path.with_suffix(x)

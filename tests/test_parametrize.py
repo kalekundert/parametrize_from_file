@@ -15,32 +15,37 @@ TEST_DIR = Path(__file__).parent
             [],
             'test.py',
             'dummy.nt',
-            'dummy.nt',
+            lambda p: p / 'dummy.nt',
+        ), (
+            [],
+            'test.py',
+            ['dummy_1.nt', 'dummy_2.nt'],
+            lambda p: [p / 'dummy_1.nt', p / 'dummy_2.nt'],
         ), (
             ['test.json'],
             'test.py',
             None,
-            'test.json',
+            lambda p: p / 'test.json',
         ), (
             ['test.yaml'],
             'test.py',
             None,
-            'test.yaml',
+            lambda p: p / 'test.yaml',
         ), (
             ['test.yml'],
             'test.py',
             None,
-            'test.yml',
+            lambda p: p / 'test.yml',
         ), (
             ['test.toml'],
             'test.py',
             None,
-            'test.toml',
+            lambda p: p / 'test.toml',
         ), (
             ['test.nt'],
             'test.py',
             None,
-            'test.nt',
+            lambda p: p / 'test.nt',
         )
 ])
 def test_resolve_param_path(paths, test_path, rel_path, expected, tmp_path):
@@ -48,7 +53,7 @@ def test_resolve_param_path(paths, test_path, rel_path, expected, tmp_path):
         (tmp_path / p).touch()
 
     param_path = pffp._resolve_param_path(tmp_path / test_path, rel_path)
-    assert param_path == tmp_path / expected
+    assert param_path == expected(tmp_path)
 
 @pytest.mark.parametrize(
         'paths, test_path, rel_path, messages', [(
@@ -449,3 +454,83 @@ def test_parametrize_from_file(testdir):
     result = testdir.runpytest()
     result.assert_outcomes(passed=4)
 
+@pytest.mark.parametrize(
+        'files, get_path, key, expected_keys, expected_values', [(
+            {
+                'test.json': '{"aa": [{"x": 1}]}',
+            },
+            lambda p: p / 'test.json',
+            'aa',
+            ['x'],
+            [pytest.param(1, id='1')],
+        ), (
+            {
+                'test.json': '{"aa": [{"x": 1}], "bb": [{"x": 2}]}',
+            },
+            lambda p: p / 'test.json',
+            ['aa', 'bb'],
+            ['x'],
+            [pytest.param(1, id='1'), pytest.param(2, id='2')],
+        ), (
+            {
+                'test_1.json': '{"aa": [{"x": 1}]}',
+                'test_2.json': '{"aa": [{"x": 2}]}',
+            },
+            lambda p: [p / 'test_1.json', p / 'test_2.json'],
+            'aa',
+            ['x'],
+            [pytest.param(1, id='1'), pytest.param(2, id='2')],
+        ), (
+            {
+                'test_1.json': '{"aa": [{"x": 1}]}',
+                'test_2.json': '{"bb": [{"x": 2}]}',
+            },
+            lambda p: [p / 'test_1.json', p / 'test_2.json'],
+            ['aa', 'bb'],
+            ['x'],
+            [pytest.param(1, id='1'), pytest.param(2, id='2')],
+        )],
+)
+def test_load_parameters(files, get_path, key, expected_keys, expected_values, tmp_path):
+    for p, content in files.items():
+        (tmp_path / p).write_text(content)
+
+    keys, values = pff.load_parameters(get_path(tmp_path), key)
+    assert keys == expected_keys
+    assert values == expected_values
+
+@pytest.mark.parametrize(
+        'files, get_path, key, messages', [(
+            {
+                'test.json': '{"a": ',
+            },
+            lambda p: p / 'test.json',
+            'a',
+            [r'parameter file: .*test\.json'],
+        ), (
+            {
+                'test.json': '{"a": 1}',
+            },
+            lambda p: p / 'test.json',
+            'a',
+            [r'parameter file: .*test\.json', 'top-level key: a'],
+        ), (
+            {},
+            lambda p: [p / 'test_1.json', p / 'test_2.json'],
+            ['a', 'b', 'c'],
+            [
+                'must specify matching numbers of paths and keys',
+                'paths: .*test_1.*test_2',
+                r"keys: \['a', 'b', 'c'\]",
+            ],
+        )],
+)
+def test_load_parameters_err(files, get_path, key, messages, tmp_path):
+    for p, content in files.items():
+        (tmp_path / p).write_text(content)
+
+    with pytest.raises(pff.ConfigError) as err:
+        pff.load_parameters(get_path(tmp_path), key)
+
+    for msg in messages:
+        assert err.match(msg)

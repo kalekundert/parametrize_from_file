@@ -50,6 +50,12 @@ addopts = "--ignore docs --doctest-modules --doctest-glob='*.rst'"
 doctest_optionflags = 'NORMALIZE_WHITESPACE'
 markers = ["slow"]
 
+[tool.pccc]
+header_length = 72
+types = ["chore", "docs", "feat", "fix", "refactor", "style", "test"]
+ignore_generated_commits = true
+generated_commits = ['^Merge']
+
 [tool.semantic_release]
 version_variable = 'parametrize_from_file/__init__.py:__version__'
 build_command = 'python -m pip install flit && flit build'

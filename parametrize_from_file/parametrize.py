@@ -11,6 +11,20 @@ from textwrap import indent
 from more_itertools import first
 from copy import copy
 
+# suite_params:
+#     All parameters associated with the test file in question.  
+#     This is a dictionary where the keys are test names and the 
+#     values are lists of test parameters (see below).
+#
+# test_params:
+#     All parameters associated with a specific test function.  
+#     This is a list of case parameters (see below).
+#
+# case_params:
+#     A specific set of parameters to test.  This is a dictionary 
+#     of keys and values that will be provided to the actual test 
+#     function.
+
 def parametrize_from_file(
         path=None,
         key=None,
@@ -22,13 +36,13 @@ def parametrize_from_file(
     Parametrize a test function with values read from a config file.
 
     Arguments:
-        path (str,pathlib.Path):
+        path (str,pathlib.Path,list):
             The path to the parameter file, relative to the directory 
             containing the test file.  By default, the parameter file will be 
             assumed to have the same base name as the test file and one of the 
             extensions listed in the file format table below.
 
-        key (str):
+        key (str,list):
             The key that will be used to identify the parameters affiliated 
             with the decorated test function.  The default is to use the name 
             of the test function.  See below for more detail about the 
@@ -37,7 +51,8 @@ def parametrize_from_file(
         preprocess (collections.abc.Callable):
             A function that will be allowed to modify the list of test cases 
             loaded from the parameter file, e.g. to programmatically generate 
-            test cases.  The function should have the following signature::
+            and/or prune test cases.  The function should have the following 
+            signature::
 
                 def preprocess(params: Any) -> List[Dict[str, Any]]
 
@@ -45,9 +60,9 @@ def parametrize_from_file(
             parameter file.  Typically this value is a list, but it could be 
             anything.  The return value must be a list of dicts.  Each of these 
             dicts will be further processed by the *schema* argument before 
-            being used to parametrize the test function.  Note that while 
-            *schema* does not get access to the special *id* and *marks* 
-            fields, this function does.
+            being used to parametrize the test function.  Note that this 
+            function does get access to the special *id* and *marks* fields, 
+            unlike the *schema* function.
 
         schema (collections.abc.Callable):
             A function that will be used to validate and/or transform each set 
@@ -163,51 +178,24 @@ def parametrize_from_file(
     """
 
     def decorator(f):
-        try:
-            # The path is relative to the file the caller is defined in.
-            module = inspect.getmodule(f)
-            test_path = Path(module.__file__)
+        # The path is relative to the file the caller is defined in.
+        module = inspect.getmodule(f)
+        test_path = Path(module.__file__)
 
-            ConfigError.push_info(
-                    "test function: {test_func.__qualname__}()",
-                    test_func=f,
-                    test_module=module,
+        with ConfigError.add_info(
+                "test function: {test_func.__qualname__}()",
+                "test file: {test_path}",
+                test_func=f,
+                test_module=module,
+                test_path=test_path,
+        ):
+            keys, values = load_parameters(
+                    _resolve_param_path(test_path, path),
+                    key or f.__name__,
+                    preprocess=preprocess,
+                    schema=schema,
             )
-            ConfigError.push_info(
-                    "test file: {test_path}",
-                    test_path=test_path,
-            )
-
-            param_path = _find_param_path(test_path, path)
-
-            ConfigError.push_info(
-                    "parameter file: {param_path}",
-                    param_path=param_path,
-            )
-
-            # suite_params:
-            #     All parameters associated with the test file in question.  
-            #     This is a dictionary where the keys are test names and the 
-            #     values are lists of test parameters (see below).
-            #
-            # test_params:
-            #     All parameters associated with a specific test function.  
-            #     This is a list of case parameters (see below).
-            #
-            # case_params:
-            #     A specific set of parameters to test.  This is a dictionary 
-            #     of keys and values that will be provided to the actual test 
-            #     function.
-
-            suite_params = _load_and_cache_suite_params(param_path)
-            test_params = _get_test_params(suite_params, key or f.__name__)
-            test_params = _process_test_params(test_params, preprocess, schema)
-            keys, values = _init_parametrize_args(test_params)
-
             return pytest.mark.parametrize(keys, values)(f)
-
-        finally:
-            ConfigError.clear_info()
 
     if callable(path):
         f, path = path, None
@@ -215,76 +203,133 @@ def parametrize_from_file(
     else:
         return decorator
 
-def _find_param_path(test_path, rel_path):
+def load_parameters(
+        path,
+        key,
+        *,
+        preprocess=None,
+        schema=None,
+    ):
+    """
+    Load test parameters from a file.
+
+    Arguments:
+        path (str, pathlib.Path):
+            The path to the file containing the parameters.  Unlike with 
+            :deco:`parametrize_from_file`, this path is expected to be 
+            absolute.  If it's not absolute, it's interpreted relative to the 
+            current working directory
+
+        key (str):
+            See: :deco:`parametrize_from_file`
+
+        preprocess (collections.abc.Callable):
+            See: :deco:`parametrize_from_file`
+
+        schema (collections.abc.Callable):
+            See: :deco:`parametrize_from_file`
+
+    Returns:
+        tuple:
+            - A list of parameter names
+            - A list of `pytest.param` instances
+
+    This function does almost the same thing as :deco:`parametrize_from_file`, 
+    except that instead of decorating a test function, it simply returns the 
+    parameters it loads.  This might be useful in some unusual situations.  For 
+    example, you could use this function to load test parameters from two or 
+    more different files, merge them, and apply them all to a single test 
+    function.
+    """
+    with ConfigError.add_info(
+                    "parameter file: {param_path}",
+                    param_path=path,
+    ):
+        test_params = _load_test_params(path, key)
+        test_params = _process_test_params(test_params, preprocess, schema)
+        return _init_parametrize_args(test_params)
+
+def _resolve_param_path(test_path, rel_path):
     if rel_path:
-        param_path = test_path.parent / rel_path
+        return test_path.parent / rel_path
 
-        if not param_path.exists():
-            err = ConfigError(
-                    rel_path=rel_path,
-                    param_path=param_path,
-            )
-            err.brief = "can't find parametrization file"
-            err.blame += "'{param_path}' does not exist."
-            raise err
+    param_path_candidates = [
+            test_path.with_suffix(x)
+            for x in get_loaders()
+    ]
+    param_paths = [
+            x for x in param_path_candidates if x.exists()
+    ]
 
-        if param_path.suffix not in get_loaders():
-            err = ConfigError(
-                    rel_path=rel_path,
-                    param_path=param_path,
-                    known_extensions=get_loaders().keys(),
-            )
-            err.brief = "parametrization file must have a recognized extension"
-            err.info += lambda e: '\n'.join((
-                    "the following extensions are recognized:",
-                    *e.known_extensions,
-            ))
-            err.blame += "the given extension is not recognized: {param_path.suffix}"
-            raise err
-
-
-    else:
-        param_path_candidates = [
-                test_path.with_suffix(x)
-                for x in get_loaders()
-        ]
-        try:
-            param_path = first(
-                    x for x in param_path_candidates if x.exists()
-            )
-        except ValueError:
-            err = ConfigError(
+    if len(param_paths) < 1:
+        err = ConfigError(
                 paths=param_path_candidates,
-            )
-            err.brief = "can't find parametrization file"
-            err.info += "no relative path specified"
-            err.blame += lambda e: '\n'.join([
-                "none of the following default paths exist:",
-                *map(str, e.paths),
-            ])
-            raise err from None
+        )
+        err.brief = "can't find parametrization file"
+        err.info += "no relative path specified"
+        err.blame += lambda e: '\n'.join([
+            "none of the following default paths exist:",
+            *map(str, e.paths),
+        ])
+        raise err
 
-    return param_path
+    if len(param_paths) > 1:
+        err = ConfigError(
+                paths=param_paths,
+        )
+        err.brief = "found multiple parametrization files"
+        err.info += "no relative path specified"
+        err.blame += lambda e: '\n'.join([
+            "don't know which file to use:",
+            *map(str, e.paths),
+        ])
+        raise err
+
+    return param_paths[0]
 
 @lru_cache()
-def _load_and_cache_suite_params(path):
-    # This should be guaranteed by _find_param_path().
-    assert path.suffix in get_loaders()
-    loader = get_loaders()[path.suffix]
+def _load_and_cache_suite_params(param_path):
+    if not param_path.exists():
+        err = ConfigError(
+                param_path=param_path,
+        )
+        err.brief = "can't find parametrization file"
+        err.blame += "'{param_path}' does not exist."
+        raise err
+
+    loaders = get_loaders()
 
     try:
-        return loader(path)
+        loader = loaders[param_path.suffix]
+
+    except KeyError:
+        err = ConfigError(
+                param_path=param_path,
+                known_extensions=loaders.keys(),
+        )
+        err.brief = "parametrization file must have a recognized extension"
+        err.info += lambda e: '\n'.join((
+                "the following extensions are recognized:",
+                *e.known_extensions,
+        ))
+        err.blame += "the given extension is not recognized: {param_path.suffix}"
+        raise err from None
+
+    try:
+        return loader(param_path)
 
     except Exception as e:
         err = ConfigError(
                 load_func=loader,
         )
         err.brief = "failed to load parametrization file"
-        err.info += "attempted to load file with: {load_func}"
+        err.info += "attempted to load file with: {load_func.__module__}.{load_func.__qualname__}()"
         err.blame += str(e)
-        raise err
+        raise err from None
 
-def _get_test_params(suite_params, test_name):
+def _load_test_params(param_path, test_name):
+    suite_params = _load_and_cache_suite_params(param_path)
+
     try:
         return suite_params[test_name]
 

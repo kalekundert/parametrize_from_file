@@ -11,69 +11,177 @@ pytest_plugins = ['pytester']
 TEST_DIR = Path(__file__).parent
 
 @pytest.mark.parametrize(
-        'test_path, rel_path, expected', [(
-            'test.py', 'dummy.nt',
+        'paths, test_path, rel_path, expected', [(
+            [],
+            'test.py',
+            'dummy.nt',
             'dummy.nt',
         ), (
-            'json_dir/test.py', None,
-            'json_dir/test.json',
+            ['test.json'],
+            'test.py',
+            None,
+            'test.json',
         ), (
-            'toml_dir/test.py', None,
-            'toml_dir/test.toml',
+            ['test.yaml'],
+            'test.py',
+            None,
+            'test.yaml',
         ), (
-            'yaml_dir/test.py', None,
-            'yaml_dir/test.yml',
+            ['test.yml'],
+            'test.py',
+            None,
+            'test.yml',
         ), (
-            'nt_dir/test.py', None,
-            'nt_dir/test.nt',
+            ['test.toml'],
+            'test.py',
+            None,
+            'test.toml',
+        ), (
+            ['test.nt'],
+            'test.py',
+            None,
+            'test.nt',
         )
 ])
-def test_find_param_path(test_path, rel_path, expected):
-    root = TEST_DIR / 'test_find_param_path'
-    param_path = pffp._find_param_path(root/test_path, rel_path)
-    assert param_path == root/expected
+def test_resolve_param_path(paths, test_path, rel_path, expected, tmp_path):
+    for p in paths:
+        (tmp_path / p).touch()
+
+    param_path = pffp._resolve_param_path(tmp_path / test_path, rel_path)
+    assert param_path == tmp_path / expected
 
 @pytest.mark.parametrize(
-        'test_path, rel_path, message', [(
-            'test.py', 'xyz',
-            "can't find parametrization file",
+        'paths, test_path, rel_path, messages', [(
+            [],
+            'test.py',
+            None,
+            [
+                "can't find parametrization file",
+                "none of the following default paths exist",
+                "test.json",
+                "test.yml",
+                "test.toml",
+                "test.nt",
+            ],
         ), (
-            'test.py', 'dummy.xyz',
-            "parametrization file must have a recognized extension",
-        ), (
-            'dummy_dir/test.py', None,
-            "can't find parametrization file",
+            ['test.yml', 'test.toml'],
+            'test.py',
+            None,
+            [
+                "found multiple parametrization files",
+                "don't know which file to use:",
+                "test.yml",
+                "test.toml",
+            ],
         )
 ])
-def test_find_param_path_err(test_path, rel_path, message):
-    root = TEST_DIR / 'test_find_param_path'
-    with pytest.raises(pff.ConfigError, match=message):
-        pffp._find_param_path(root/test_path, rel_path)
+def test_resolve_param_path_err(paths, test_path, rel_path, messages, tmp_path):
+    for p in paths:
+        (tmp_path / p).touch()
 
-@pytest.mark.parametrize('suffix', pffp.get_loaders().keys())
-def test_load_suite_params(suffix):
-    root = TEST_DIR / 'test_load_and_cache_suite_params'
-    suite_params = pffp._load_and_cache_suite_params(root / f'ok{suffix}')
-    assert suite_params == {'a': 'b'}
+    with pytest.raises(pff.ConfigError) as err:
+        pffp._resolve_param_path(tmp_path / test_path, rel_path)
 
-@pytest.mark.parametrize('suffix', pffp.get_loaders().keys())
-def test_load_suite_params_err(suffix):
-    root = TEST_DIR / 'test_load_and_cache_suite_params'
-    message = "failed to load parametrization file"
+    for msg in messages:
+        assert err.match(msg)
 
-    with pytest.raises(pff.ConfigError, match=message):
-        pffp._load_and_cache_suite_params(root / f'err{suffix}')
+@pytest.mark.parametrize(
+        'path, contents, expected', [
+            ('ok.json', '{"a": "b"}', {'a': 'b'}),
+            ('ok.yml', 'a: b', {'a': 'b'}),
+            ('ok.yaml', 'a: b', {'a': 'b'}),
+            ('ok.toml', 'a = "b"', {'a': 'b'}),
+            ('ok.nt', 'a: b', {'a': 'b'}),
+        ],
+)
+def test_load_suite_params(path, contents, expected, tmp_path):
+    p = tmp_path / path
+    p.write_text(contents)
 
-def test_cache_suite_params():
+    suite_params = pffp._load_and_cache_suite_params(p)
+    assert suite_params == expected
+
+@pytest.mark.parametrize(
+        'files, path, messages', [(
+            {},
+            'does-not-exist.json',
+            [
+                "can't find parametrization file",
+                "does-not-exist.json",
+            ],
+        ), (
+            {'wrong-ext.xyz': ''},
+            'wrong-ext.xyz',
+            [
+                "parametrization file must have a recognized extension",
+                "the given extension is not recognized: .xyz",
+            ],
+        ), (
+            {'err.json': '{"a":'},
+            'err.json',
+            [
+                "failed to load parametrization file",
+                "attempted to load file with: json.load()",
+                "Expecting value",
+            ],
+        ), (
+            {'err.yml': ':'},
+            'err.yml',
+            [
+                "failed to load parametrization file",
+                "attempted to load file with: yaml.safe_load()",
+                "expected <block end>, but found ':'",
+            ],
+        ), (
+            {'err.yaml': ':'},
+            'err.yaml',
+            [
+                "failed to load parametrization file",
+                "attempted to load file with: yaml.safe_load()",
+                "expected <block end>, but found ':'",
+            ],
+        ), (
+            {'err.toml': 'a ='},
+            'err.toml',
+            [
+                "failed to load parametrization file",
+                "attempted to load file with: toml.decoder.load()",
+                "Empty value is invalid",
+            ],
+        ), (
+            {'err.nt': 'a ='},
+            'err.nt',
+            [
+                "failed to load parametrization file",
+                "attempted to load file with: nestedtext.load()",
+            ],
+        ),
+    ]
+)
+def test_load_suite_params_err(files, path, messages, tmp_path):
+    for p, content in files.items():
+        (tmp_path / p).write_text(content)
+        
+    with pytest.raises(pff.ConfigError) as err:
+        pffp._load_and_cache_suite_params(tmp_path / path)
+
+    for msg in messages:
+        assert err.match(msg)
+
+def test_cache_suite_params(tmp_path):
     m = Mock()
+    p = tmp_path / 'dummy.xyz'
+    p.touch()
     pff.add_loader('.xyz', m)
 
     try:
         assert m.call_count == 0
 
-        for i in range(2):
-            pffp._load_and_cache_suite_params(Path('dummy.xyz'))
-            assert m.call_count == 1
+        pffp._load_and_cache_suite_params(p)
+        assert m.call_count == 1
+
+        pffp._load_and_cache_suite_params(p)
+        assert m.call_count == 1
 
     finally:
         pff.drop_loader('.xyz')
@@ -83,8 +191,12 @@ def test_cache_suite_params():
             {'a': 1}, 'a', 1,
         ),
 ])
-def test_get_test_params(suite_params, test_name, expected):
-    test_params = pffp._get_test_params(suite_params, test_name)
+def test_load_test_params(suite_params, test_name, expected, tmp_path):
+    import json
+    p = tmp_path / 'ok.yml'
+    p.write_text(json.dumps(suite_params))
+
+    test_params = pffp._load_test_params(p, test_name)
     assert test_params == expected
 
 @pytest.mark.parametrize(
@@ -93,9 +205,13 @@ def test_get_test_params(suite_params, test_name, expected):
             "must specify parameters for 'a'",
         ),
 ])
-def test_get_test_params_err(suite_params, test_name, message):
+def test_load_test_params_err(suite_params, test_name, message, tmp_path):
+    import json
+    p = tmp_path / 'err.yml'
+    p.write_text(json.dumps(suite_params))
+
     with pytest.raises(pff.ConfigError, match=message):
-        pffp._get_test_params(suite_params, test_name)
+        pffp._load_test_params(p, test_name)
 
 @pytest.mark.parametrize(
         'test_params, preprocess, schema, expected', [(

@@ -4,14 +4,14 @@
 Parametrize test functions with values read from config files.
 """
 
-from .parametrize import parametrize_from_file
+from .parametrize import parametrize_from_file, load_parameters
 from .namespace import Namespace
 from .loaders import add_loader, drop_loader
 from .errors import ConfigError
 
 __version__ = '0.4.0'
 
-for obj in [Namespace, ConfigError, add_loader, drop_loader]:
+for obj in [parametrize_from_file, Namespace, ConfigError, add_loader, drop_loader, load_parameters]:
     obj.__module__ = 'parametrize_from_file'
 
 # Hack to make the module directly usable as a decorator.  Only works for 

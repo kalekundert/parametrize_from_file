@@ -272,8 +272,8 @@ def _get_test_params(suite_params, test_name):
         err.hints += "make sure the top-level data structure in the parameter file is a dictionary where the keys are the names of test functions, and the values are dictionaries of test parameters."
         raise err from None
 
-def _validate_test_params(test_params, schema):
-    validated_params = []
+def _validate_test_params(test_params_in, schema):
+    test_params_out = []
 
     def stash_id_marks(obj):
         params = {}
@@ -287,26 +287,26 @@ def _validate_test_params(test_params, schema):
 
         return params, stash
 
-    if not isinstance(test_params, list):
+    if not isinstance(test_params_in, list):
         raise ConfigError(
                 "expected list of dicts, got {params!r}",
-                params=test_params,
+                params=test_params_in,
         )
 
-    for case_params in test_params:
-        if not isinstance(case_params, dict):
+    for case_params_in in test_params_in:
+        if not isinstance(case_params_in, dict):
             raise ConfigError(
                     "expected dict, got {params!r}",
-                    params=case_params,
+                    params=case_params_in,
             )
 
-        params, stash = stash_id_marks(case_params)
+        params, stash = stash_id_marks(case_params_in)
 
         try:
             params = schema(params)
         except Exception as err1:
             err2 = ConfigError(
-                    params=case_params,
+                    params=case_params_in,
             )
             err2.brief = "test case failed schema validation"
             err2.info += lambda e: (
@@ -316,10 +316,16 @@ def _validate_test_params(test_params, schema):
             err2.blame += str(err1)
             raise err2 from err1
 
-        params.update(stash)
-        validated_params.append(params)
+        if not isinstance(params, dict):
+            raise ConfigError(
+                    "expected schema to return dict, got {params!r}",
+                    params=params,
+            )
 
-    return validated_params
+        case_params_out = {**params, **stash}
+        test_params_out.append(case_params_out)
+
+    return test_params_out
 
 def _init_parametrize_args(test_params):
     # Convert the keys into a list to better define their order.  It's 

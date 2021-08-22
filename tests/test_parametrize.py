@@ -150,6 +150,10 @@ def test_validate_test_params(test_params, schema, expected):
             [{'a': 1, 'b': 'c'}],
             Schema({str: int}),
             "test case failed schema validation",
+        ), (
+            [{}],
+            lambda _: 'a',
+            "expected schema to return dict, got 'a'",
         )
 ])
 def test_validate_test_params_err(test_params, schema, message):

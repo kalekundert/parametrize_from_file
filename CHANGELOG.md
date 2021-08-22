@@ -2,6 +2,20 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.0 (2021-08-22)
+### Feature
+* Allow multiple paths/keys to be specified ([`fe6696a`](https://github.com/kalekundert/parametrize_from_file/commit/fe6696a30edb878d677304f13ff38adc5fc15478))
+* Add the load_parameters() function ([`5c8af43`](https://github.com/kalekundert/parametrize_from_file/commit/5c8af43965beca80cdd87dfcf52ed9c89e9334c1))
+* Add the *preprocess* argument ([`219aa9f`](https://github.com/kalekundert/parametrize_from_file/commit/219aa9f37429b876171b48c4c01ebefa9af4fb4f))
+
+### Fix
+* Check that the schema returns a dict ([`85ecdf1`](https://github.com/kalekundert/parametrize_from_file/commit/85ecdf1d810ce58f88a28eeddba370a87962ba91))
+
+### Documentation
+* Add examples of my projects that use this package ([`f1e59f3`](https://github.com/kalekundert/parametrize_from_file/commit/f1e59f3b0e7040687b9918461a67fc6297ca6bb4))
+* Install dependencies ([`90721fd`](https://github.com/kalekundert/parametrize_from_file/commit/90721fd11f7dacc68bb70f125aa6348bf2f5e606))
+* Install dependencies ([`6ca7ae8`](https://github.com/kalekundert/parametrize_from_file/commit/6ca7ae89b27af50172ae85e833e42ea7b5919a27))
+
 ## v0.4.0 (2021-08-20)
 ### Feature
 * Add the Namespace eval/exec/error helper ([`e0c8523`](https://github.com/kalekundert/parametrize_from_file/commit/e0c85238997bd521c361463e6794e2e7ea299a0d))

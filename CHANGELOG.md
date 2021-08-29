@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.1 (2021-08-29)
+### Fix
+* Correctly format error messages with braces ([`7caaa31`](https://github.com/kalekundert/parametrize_from_file/commit/7caaa31da50930918efd0a4389bc45c860435027))
+
 ## v0.5.0 (2021-08-22)
 ### Feature
 * Allow multiple paths/keys to be specified ([`fe6696a`](https://github.com/kalekundert/parametrize_from_file/commit/fe6696a30edb878d677304f13ff38adc5fc15478))

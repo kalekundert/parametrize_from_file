@@ -10,6 +10,10 @@ from pathlib import Path
 pytest_plugins = ['pytester']
 TEST_DIR = Path(__file__).parent
 
+def value_error_with_braces(x):
+    raise ValueError('{hello world}')
+
+
 @pytest.mark.parametrize(
         'paths, test_path, rel_path, expected', [(
             [],
@@ -173,6 +177,25 @@ def test_load_suite_params_err(files, path, messages, tmp_path):
     for msg in messages:
         assert err.match(msg)
 
+def test_load_suite_params_err_brace(tmp_path):
+    # The braces in this error message must not be evaluated by tidyexc.
+    pff.add_loader('.xyz', value_error_with_braces)
+
+    p = tmp_path / 'dummy.xyz'
+    p.touch()
+
+    try:
+        with pytest.raises(pff.ConfigError) as err:
+            pffp._load_and_cache_suite_params(p)
+
+        assert err.match("failed to load parametrization file")
+        assert err.match("attempted to load file with: .*value_error_with_braces")
+        assert err.match(r"\{hello world\}")
+
+    finally:
+        pff.drop_loader('.xyz')
+
+
 def test_cache_suite_params(tmp_path):
     m = Mock()
     p = tmp_path / 'dummy.xyz'
@@ -285,53 +308,63 @@ def test_process_test_params(test_params, preprocess, schema, expected):
     assert actual == expected
 
 @pytest.mark.parametrize(
-        'test_params, preprocess, schema, message', [(
+        'test_params, preprocess, schema, messages', [(
             # preprocess
             [{'a': 1}],
             lambda _: 'a',
             None,
-            "expected preprocess to return list of dicts, got 'a'",
+            ["expected preprocess to return list of dicts, got 'a'"],
         ), (
             [{'a': 1}],
             lambda _: ['a'],
             None,
-            "expected dict, got 'a'",
+            ["expected dict, got 'a'"],
         ), (
             # schema
             'a',
             None,
             Schema({'a': int}),
-            "expected list of dicts, got 'a'",
+            ["expected list of dicts, got 'a'"],
         ), (
             ['a'],
             None,
             Schema({'a': int}),
-            "expected dict, got 'a'",
+            ["expected dict, got 'a'"],
         ), (
             [{'a': 'b'}],
             None,
             Schema({'a': int}),
-            "test case failed schema validation",
+            ["test case failed schema validation"],
         ), (
             [{'a': 1}],
             None,
             Schema({'b': int}),
-            "test case failed schema validation",
+            ["test case failed schema validation"],
         ), (
             [{'a': 1, 'b': 'c'}],
             None,
             Schema({str: int}),
-            "test case failed schema validation",
+            ["test case failed schema validation"],
+        ), (
+            # This error message will have braces, which must not be evaluated 
+            # by tidyexc.
+            [{'a': 1, 'b': 2}],
+            None,
+            value_error_with_braces,
+            ["test case failed schema validation", r"\{hello world\}"],
         ), (
             [{}],
             None,
             lambda _: 'a',
-            "expected schema to return dict, got 'a'",
+            ["expected schema to return dict, got 'a'"],
         )
 ])
-def test_process_test_params_err(test_params, preprocess, schema, message):
-    with pytest.raises(pff.ConfigError, match=message):
+def test_process_test_params_err(test_params, preprocess, schema, messages):
+    with pytest.raises(pff.ConfigError) as err:
         pffp._process_test_params(test_params, preprocess, schema)
+
+    for msg in messages:
+        assert err.match(msg)
 
 @pytest.mark.parametrize(
         'test_params, expected', [(
@@ -534,3 +567,5 @@ def test_load_parameters_err(files, get_path, key, messages, tmp_path):
 
     for msg in messages:
         assert err.match(msg)
+        
+

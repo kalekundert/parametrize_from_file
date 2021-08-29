@@ -357,14 +357,15 @@ def _load_and_cache_suite_params(param_path):
     try:
         return loader(param_path)
 
-    except Exception as e:
-        err = ConfigError(
+    except Exception as err1:
+        err2 = ConfigError(
                 load_func=loader,
+                err=err1,
         )
-        err.brief = "failed to load parametrization file"
-        err.info += "attempted to load file with: {load_func.__module__}.{load_func.__qualname__}()"
-        err.blame += str(e)
-        raise err from None
+        err2.brief = "failed to load parametrization file"
+        err2.info += "attempted to load file with: {load_func.__module__}.{load_func.__qualname__}()"
+        err2.blame += "{err}"
+        raise err2 from None
 
 def _load_test_params(param_path, test_name):
     suite_params = _load_and_cache_suite_params(param_path)
@@ -426,13 +427,14 @@ def _process_test_params(test_params_in, preprocess, schema):
             except Exception as err1:
                 err2 = ConfigError(
                         params=case_params_in,
+                        err=err1,
                 )
                 err2.brief = "test case failed schema validation"
                 err2.info += lambda e: (
                         "test case:\n" +
                         _format_case_params(e.params)
                 )
-                err2.blame += str(err1)
+                err2.blame += '{err}'
                 raise err2 from err1
 
             if not isinstance(params, dict):

@@ -81,15 +81,46 @@ def test_zip_with_scalars(objs, kwargs, expected):
 
 @pytest.mark.parametrize(
         "objs, kwargs, error", [(
-            # 0 items
             [[], [1]],
+            dict(strict=True),
+            UnequalIterablesError,
+        ), (
+            [[1], []],
             dict(strict=True),
             UnequalIterablesError,
         ), (
             [[1], [2, 3]],
             dict(strict=True),
             UnequalIterablesError,
-        )],
+        ), (
+            [[1, 2], [3]],
+            dict(strict=True),
+            UnequalIterablesError,
+        ), (
+            [[1, 2], [3], [4]],
+            dict(strict=True),
+            UnequalIterablesError,
+        ), (
+            [[1], [2, 3], [4]],
+            dict(strict=True),
+            UnequalIterablesError,
+        ), (
+            [[1], [2], [3, 4]],
+            dict(strict=True),
+            UnequalIterablesError,
+        ), (
+            [[1], [2, 3], [4, 5]],
+            dict(strict=True),
+            UnequalIterablesError,
+        ), (
+            [[1, 2], [3], [4, 5]],
+            dict(strict=True),
+            UnequalIterablesError,
+        ), (
+            [[1, 2], [3, 4], [5]],
+            dict(strict=True),
+            UnequalIterablesError,
+        )]
 )
 def test_zip_with_scalars_err(objs, kwargs, error):
     with pytest.raises(error):

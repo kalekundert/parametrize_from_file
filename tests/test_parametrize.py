@@ -461,7 +461,7 @@ def test_parametrize_from_file(testdir):
                 a: 2
                 b: 4
                 c: 6
-                    
+
             test_concat:
               -
                 a: 1
@@ -486,6 +486,28 @@ def test_parametrize_from_file(testdir):
     """)
     result = testdir.runpytest()
     result.assert_outcomes(passed=4)
+
+def test_parametrize_from_file_indirect(testdir):
+    testdir.makefile('.nt', """\
+            test_indirect:
+              -
+                given: a
+                expected: a-fixture
+    """)
+    testdir.makefile('.py', """\
+            import pytest
+            import parametrize_from_file
+
+            @pytest.fixture
+            def given(request):
+                return f"{request.param}-fixture"
+
+            @parametrize_from_file(indirect=['given'])
+            def test_indirect(given, expected):
+                assert given == expected
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=1)
 
 @pytest.mark.parametrize(
         'files, get_path, key, expected_keys, expected_values', [(

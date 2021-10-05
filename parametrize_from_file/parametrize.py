@@ -32,6 +32,7 @@ def parametrize_from_file(
         *,
         preprocess=None,
         schema=None,
+        indirect=False,
     ):
     """
     Parametrize a test function with values read from a config file.
@@ -96,6 +97,9 @@ def parametrize_from_file(
             While it's possible to write your own schema functions, this 
             argument is meant to be used in conjunction with a schema library 
             such as voluptuous_ or schema_.
+
+        indirect (bool,list):
+            See `pytest.Metafunc.parametrize`.
 
     The parameter file must be in one of the following formats, and must have a 
     corresponding file extension:
@@ -209,7 +213,7 @@ def parametrize_from_file(
                     preprocess=preprocess,
                     schema=schema,
             )
-            return pytest.mark.parametrize(keys, values)(f)
+            return pytest.mark.parametrize(keys, values, indirect=indirect)(f)
 
     if callable(path):
         f, path = path, None

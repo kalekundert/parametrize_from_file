@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.6.0 (2021-10-06)
+### Feature
+* Support parametrized fixtures ([`e9a95c4`](https://github.com/kalekundert/parametrize_from_file/commit/e9a95c4c324f9af7579cb0c6352f1292c7e7b9d7))
+* Support indirect parametrization ([`34308c4`](https://github.com/kalekundert/parametrize_from_file/commit/34308c4cec6af0fe8fe74c20c07f49d7b0390e8c))
+
 ## v0.5.1 (2021-08-29)
 ### Fix
 * Correctly format error messages with braces ([`7caaa31`](https://github.com/kalekundert/parametrize_from_file/commit/7caaa31da50930918efd0a4389bc45c860435027))

@@ -16,8 +16,8 @@ consider testing a ``from_angle()`` function that initializes a vector from a
 given angle (relative to the x-axis).  This function will have two optional 
 parameters:
 
-- *unit*: specify whether the given angle is in radians or degrees.
-- *magnitude*: set the length of the resulting vector
+- *unit*: whether the given angle is in radians or degrees
+- *magnitude*: the length of the resulting vector
 
 .. literalinclude:: optional_params/vector.py
    :caption: vector.py

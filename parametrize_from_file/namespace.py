@@ -5,6 +5,7 @@ from copy import copy
 from collections.abc import Mapping
 from contextlib2 import nullcontext
 from functools import partial
+from unittest.mock import Mock
 
 class Namespace(dict):
     """\
@@ -186,6 +187,12 @@ class Namespace(dict):
 
         Returns:
             Any: The result of evaluating the given expressions.  
+
+        `unittest.mock.Mock` instances are handled specially by this method.  
+        Specifically, they are returned unchanged (without being evaluated).  
+        This special case exists because `voluptuous.Namespace.error_or` uses
+        `unittest.mock.Mock` instances as placeholders when an exception is 
+        expected.
         """
         src = src[0] if len(src) == 1 else list(src)
         recurse = partial(self.eval, eval_keys=eval_keys)
@@ -195,6 +202,8 @@ class Namespace(dict):
         elif type(src) is dict:
             f = recurse if eval_keys else lambda x: x
             return {f(k): recurse(v) for k, v in src.items()}
+        elif isinstance(src, Mock):
+            return src
         else:
             return eval(src, self)
 
@@ -203,13 +212,22 @@ class Namespace(dict):
         Execute the given python snippet within this namespace.
 
         Arguments:
-            src (str): A snippet of python code to execute.
+            src (str): A snippet of python code to execute.  
+            `unittest.mock.Mock` instances will be returned unchanged.
 
         Returns:
             Namespace: A new namespace containing all of the variables defined 
             in the snippet.
 
+        `unittest.mock.Mock` instances are handled specially by this method.  
+        Specifically, they are returned unchanged (without being executed).  
+        This special case exists because `voluptuous.Namespace.error_or` uses
+        `unittest.mock.Mock` instances as placeholders when an exception is 
+        expected.
         """
+        if isinstance(src, Mock):
+            return src
+
         globals = self.copy()
         exec(src, globals)
         return globals

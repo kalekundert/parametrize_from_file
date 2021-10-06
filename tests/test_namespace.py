@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import pytest
+from unittest.mock import Mock, MagicMock
 from parametrize_from_file import Namespace
 
 class MockError1(Exception):
@@ -170,6 +171,13 @@ def test_eval(globals, args, kwargs, expected):
     ns = Namespace(globals)
     assert ns.eval(*args, **kwargs) == expected
 
+@pytest.mark.parametrize(
+        'mock', [Mock(), MagicMock()],
+)
+def test_eval_mock(mock):
+    ns = Namespace()
+    assert ns.eval(mock) is mock
+
 @SharedParams.eval_err
 def test_eval_err(globals, args, kwargs, error):
     ns = Namespace(globals)
@@ -192,6 +200,13 @@ def test_exec():
     assert ns3['a'] == 1
     assert ns3['b'] == 2
     assert ns3['c'] == 3
+
+@pytest.mark.parametrize(
+        'mock', [Mock(), MagicMock()],
+)
+def test_exec_mock(mock):
+    ns = Namespace()
+    assert ns.exec(mock) is mock
 
 @SharedParams.exec_err
 def test_exec_err(globals, src, error):

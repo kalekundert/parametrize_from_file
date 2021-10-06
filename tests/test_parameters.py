@@ -2,7 +2,7 @@
 
 import pytest
 import parametrize_from_file as pff
-import parametrize_from_file.parametrize as pffp
+import parametrize_from_file.parameters as pffp
 from unittest.mock import Mock
 from voluptuous import Schema
 from pathlib import Path
@@ -450,7 +450,7 @@ def test_format_case_params(case_params, expected):
 def test_init_parametrize_arguments(test_params, keys, values):
     assert pffp._init_parametrize_args(test_params) == (keys, values)
 
-def test_parametrize_from_file(testdir):
+def test_parametrize(testdir):
     testdir.makefile('.nt', """\
             test_addition:
               -
@@ -487,27 +487,181 @@ def test_parametrize_from_file(testdir):
     result = testdir.runpytest()
     result.assert_outcomes(passed=4)
 
-def test_parametrize_from_file_indirect(testdir):
-    testdir.makefile('.nt', """\
-            test_indirect:
+def test_parametrize_no_args(testdir):
+    testdir.makefile('.nt', test_file="""\
+            test_eq:
               -
-                given: a
-                expected: a-fixture
+                a: x
+                b: x
+    """)
+    testdir.makefile('.py', test_file="""\
+            import parametrize_from_file
+
+            @parametrize_from_file
+            def test_eq(a, b):
+                assert a == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=1)
+
+def test_parametrize_path(testdir):
+    testdir.makefile('.nt', test_file_alt="""\
+            test_eq:
+              -
+                a: x
+                b: x
+    """)
+    testdir.makefile('.py', test_file="""\
+            import parametrize_from_file
+
+            @parametrize_from_file('test_file_alt.nt')
+            def test_eq(a, b):
+                assert a == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=1)
+
+def test_parametrize_key(testdir):
+    testdir.makefile('.nt', test_file="""\
+            test_eq_alt:
+              -
+                a: x
+                b: x
+    """)
+    testdir.makefile('.py', test_file="""\
+            import parametrize_from_file
+
+            @parametrize_from_file(key='test_eq_alt')
+            def test_eq(a, b):
+                assert a == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=1)
+
+def test_parametrize_preprocess(testdir):
+    testdir.makefile('.nt', test_file="""\
+            test_eq:
+              -
+                a: x
+                b: x
+    """)
+    testdir.makefile('.py', test_file="""\
+            import parametrize_from_file
+
+            @parametrize_from_file(
+                preprocess=lambda x: [*x, dict(a='y', b='y')],
+            )
+            def test_eq(a, b):
+                assert a == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=2)
+
+def test_parametrize_schema(testdir):
+    testdir.makefile('.nt', test_file="""\
+            test_double:
+              -
+                a: 1
+                b: 2
+    """)
+    testdir.makefile('.py', test_file="""\
+            import parametrize_from_file
+
+            @parametrize_from_file(
+                schema=lambda x: {k: int(v) for k, v in x.items()},
+            )
+            def test_double(a, b):
+                assert a * 2 == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=1)
+
+def test_parametrize_indirect(testdir):
+    testdir.makefile('.nt', """\
+            test_eq:
+              -
+                a: x
+                b: x-fixture
     """)
     testdir.makefile('.py', """\
             import pytest
             import parametrize_from_file
 
             @pytest.fixture
-            def given(request):
+            def a(request):
                 return f"{request.param}-fixture"
 
-            @parametrize_from_file(indirect=['given'])
-            def test_indirect(given, expected):
-                assert given == expected
+            @parametrize_from_file(indirect=['a'])
+            def test_eq(a, b):
+                assert a == b
     """)
     result = testdir.runpytest()
     result.assert_outcomes(passed=1)
+
+def test_parametrize_err(testdir):
+    testdir.makefile('.py', test_path="""\
+            import parametrize_from_file
+
+            @parametrize_from_file
+            def test_noop():
+                pass
+    """)
+    result = testdir.runpytest()
+    stdout = '\n'.join(result.outlines)
+    assert 'test function: test_noop()' in stdout
+    assert f'test file: {testdir.tmpdir}/test_path.py' in stdout
+
+def test_fixture(testdir):
+    testdir.makefile('.nt', """\
+            ab:
+              -
+                a: x
+                b: x
+              -
+                a: y
+                b: y
+    """)
+    testdir.makefile('.py', """\
+            import parametrize_from_file as pff
+
+            @pff.fixture
+            def ab(request):
+                return request.param
+
+            def test_eq(ab):
+                assert ab.a == ab.b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=2)
+
+def test_fixture_id_marks(testdir):
+    testdir.makefile('.nt', """\
+            ab:
+              -
+                id: x
+                a: x
+                b: x
+              -
+                id: y
+                marks: skip
+                a: y
+                b: y
+    """)
+    testdir.makefile('.py', """\
+            import parametrize_from_file as pff
+
+            @pff.fixture
+            def ab(request):
+                return request.param
+
+            def test_eq(ab):
+                assert ab.a == ab.b
+    """)
+    result = testdir.runpytest('-v')
+    result.assert_outcomes(passed=1, skipped=1)
+    stdout = '\n'.join(result.outlines)
+    assert 'test_eq[x] PASSED' in stdout
+    assert 'test_eq[y] SKIPPED' in stdout
 
 @pytest.mark.parametrize(
         'files, get_path, key, expected_keys, expected_values', [(

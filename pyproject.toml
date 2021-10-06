@@ -17,6 +17,7 @@ requires = [
   'pytest',
   'more_itertools',
   'contextlib2',
+  'decopatch',
 ]
 classifiers = [
   'Programming Language :: Python :: 3',

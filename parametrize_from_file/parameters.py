@@ -2,14 +2,16 @@
 
 import pytest
 import inspect
+import decopatch
 
 from .loaders import get_loaders
 from .utils import zip_with_scalars, is_iterable
 from .errors import ConfigError
 from pathlib import Path
-from functools import lru_cache
-from textwrap import indent
+from functools import lru_cache, wraps
+from collections import namedtuple
 from more_itertools import first, UnequalIterablesError
+from textwrap import indent
 from copy import copy
 
 # suite_params:
@@ -26,14 +28,49 @@ from copy import copy
 #     of keys and values that will be provided to the actual test 
 #     function.
 
-def parametrize_from_file(
-        path=None,
-        key=None,
-        *,
-        preprocess=None,
-        schema=None,
-        indirect=False,
-    ):
+def _decorator_factory(api_func):
+
+    @decopatch.function_decorator
+    def decorator(
+            path=None,
+            key=None,
+            *,
+            preprocess=None,
+            schema=None,
+            test_func=decopatch.DECORATED,
+            **kwargs
+        ):
+
+        # The path is relative to the file the caller is defined in.
+        test_module = inspect.getmodule(test_func)
+        test_path = Path(test_module.__file__)
+
+        with ConfigError.add_info(
+                "test function: {test_func.__qualname__}()",
+                "test file: {test_path}",
+                test_func=test_func,
+                test_module=test_module,
+                test_path=test_path,
+        ):
+            param_names, param_values = load_parameters(
+                    _resolve_param_path(test_path, path),
+                    key or test_func.__name__,
+                    preprocess=preprocess,
+                    schema=schema,
+            )
+            return api_func(param_names, param_values, kwargs)(test_func)
+
+    # functools.wraps() messes up the function signature in the documentation 
+    # for some reason...
+    decorator.__name__ = api_func.__name__
+    decorator.__qualname__ = api_func.__qualname__
+    decorator.__doc__ = api_func.__doc__
+
+    return decorator
+
+
+@_decorator_factory
+def parametrize(param_names, param_values, kwargs):
     """
     Parametrize a test function with values read from a config file.
 
@@ -98,8 +135,9 @@ def parametrize_from_file(
             argument is meant to be used in conjunction with a schema library 
             such as voluptuous_ or schema_.
 
-        indirect (bool,list):
-            See `pytest.Metafunc.parametrize`.
+        kwargs:
+            Any other keyword arguments are passed on directly to 
+            `pytest.mark.parametrize ref`.
 
     The parameter file must be in one of the following formats, and must have a 
     corresponding file extension:
@@ -194,32 +232,53 @@ def parametrize_from_file(
             def test_is_even(value, expected):
                 assert is_even(value) == expected
     """
+    return pytest.mark.parametrize(param_names, param_values, **kwargs)
 
-    def decorator(f):
-        # The path is relative to the file the caller is defined in.
-        module = inspect.getmodule(f)
-        test_path = Path(module.__file__)
+@_decorator_factory
+def fixture(param_names, param_values, kwargs):
+    """
+    Parametrize a fixture function with values read from a config file.
 
-        with ConfigError.add_info(
-                "test function: {test_func.__qualname__}()",
-                "test file: {test_path}",
-                test_func=f,
-                test_module=module,
-                test_path=test_path,
-        ):
-            keys, values = load_parameters(
-                    _resolve_param_path(test_path, path),
-                    key or f.__name__,
-                    preprocess=preprocess,
-                    schema=schema,
+    Arguments:
+        path (str,pathlib.Path,list):
+            See :deco:`parametrize`.
+
+        key (str,list):
+            See :deco:`parametrize`.
+
+        preprocess (collections.abc.Callable):
+            See :deco:`parametrize`.
+
+        schema (collections.abc.Callable):
+            See :deco:`parametrize`.
+
+        kwargs:
+            See :deco:`parametrize`.
+
+    :doc:`Fixtures <fixture>` allow multiple test functions to be initialized 
+    in the same way.  Fixtures can be parametrized, in which case the fixture 
+    will be reinitialized (and any dependent test functions rerun) for each 
+    parameter.  
+
+    This decorator creates a fixture function with parameters read from a 
+    config file.  The parameters are made available to the function via 
+    ``request.param`` (the function must accept an argument named *request*).  
+    Specifically, ``request.param`` will be a `collections.namedtuple` 
+    containing a single set of parameters.  The parameters should be accessed 
+    by name only; the order of the parameters in the tuple is not guaranteed to 
+    be anything in particular.  Any ids and/or marks associated with the 
+    parameters will be correctly handled.
+    """
+    Params = namedtuple("Params", param_names)
+    params = [
+            pytest.param(
+                Params(*x.values),
+                id=x.id,
+                marks=x.marks,
             )
-            return pytest.mark.parametrize(keys, values, indirect=indirect)(f)
-
-    if callable(path):
-        f, path = path, None
-        return decorator(f)
-    else:
-        return decorator
+            for x in param_values
+    ]
+    return pytest.fixture(params=params, **kwargs)
 
 def load_parameters(
         path,
@@ -234,25 +293,25 @@ def load_parameters(
     Arguments:
         path (str, pathlib.Path, list):
             The path to the file containing the parameters.  Unlike with 
-            :deco:`parametrize_from_file`, this path is expected to be 
+            :deco:`parametrize`, this path is expected to be 
             absolute.  If it's not absolute, it's interpreted relative to the 
             current working directory.
 
         key (str, list):
-            See: :deco:`parametrize_from_file`
+            See: :deco:`parametrize`
 
         preprocess (collections.abc.Callable):
-            See: :deco:`parametrize_from_file`
+            See: :deco:`parametrize`
 
         schema (collections.abc.Callable):
-            See: :deco:`parametrize_from_file`
+            See: :deco:`parametrize`
 
     Returns:
         tuple:
             - A list of parameter names
             - A list of `pytest.param` instances
 
-    This function does almost the same thing as :deco:`parametrize_from_file`, 
+    This function does almost the same thing as :deco:`parametrize`, 
     except that instead of decorating a test function, it simply returns the 
     parameters it loads.  This might be useful in some unusual situations.  For 
     example, you could use this function to load test parameters from a file in 

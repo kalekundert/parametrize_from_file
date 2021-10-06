@@ -2,16 +2,42 @@
 
 """
 Parametrize test functions with values read from config files.
+
+Note that this module itself can be used as an alias for `parametrize`, e.g.:
+
+.. code-block::
+
+    import parametrize_from_file
+
+    @parametrize_from_file
+    def test_my_func(given, expected):
+        assert my_func(given) == expected
+
+This is the recommended usage if you do not need to import any other names from 
+the module.  If you do need to import other names, the recommendation is 
+instead to import the module as ``pff``, e.g.:
+
+.. code-block::
+
+    import parametrize_from_file as pff
+
+    @pff.fixture
+    def env(request):
+        return request.param
+
+    @pff.parametrize
+    def test_my_func(given, expected, env):
+        assert my_func(given) == expected
 """
 
-from .parametrize import parametrize_from_file, load_parameters
+from .parameters import parametrize, fixture, load_parameters
 from .namespace import Namespace
 from .loaders import add_loader, drop_loader
 from .errors import ConfigError
 
 __version__ = '0.5.1'
 
-for obj in [parametrize_from_file, Namespace, ConfigError, add_loader, drop_loader, load_parameters]:
+for obj in [parametrize, fixture, Namespace, ConfigError, add_loader, drop_loader, load_parameters]:
     obj.__module__ = 'parametrize_from_file'
 
 # Hack to make the module directly usable as a decorator.  Only works for 
@@ -23,9 +49,8 @@ import functools
 
 class CallableModule(sys.modules[__name__].__class__):
 
-    @functools.wraps(parametrize_from_file)
     def __call__(self, *args, **kwargs):
-        return parametrize_from_file(*args, **kwargs)
+        return parametrize(*args, **kwargs)
 
 sys.modules[__name__].__class__ = CallableModule
 del sys, functools, CallableModule

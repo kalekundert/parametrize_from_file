@@ -6,6 +6,8 @@ API reference
    :toctree: api
 
    parametrize_from_file
+   parametrize_from_file.parametrize
+   parametrize_from_file.fixture
    parametrize_from_file.Namespace
    parametrize_from_file.voluptuous.Namespace
    parametrize_from_file.add_loader

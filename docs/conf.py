@@ -47,6 +47,7 @@ extensions = [
         'sphinx_toolbox.decorators',
         'sphinx_rtd_theme',
 ]
+# python -m sphinx.ext.intersphinx https://docs.python.org/3/objects.inv
 intersphinx_mapping = { #
         'python': ('https://docs.python.org/3', None),
         'pytest': ('https://docs.pytest.org/en/stable', None),

@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.0 (2021-10-06)
+### Feature
+* Support eval/exec'ing mocks ([`121995a`](https://github.com/kalekundert/parametrize_from_file/commit/121995a6799334ed534a26aecfa5d23331f90d61))
+
+### Documentation
+* Tweak wording ([`f3be56a`](https://github.com/kalekundert/parametrize_from_file/commit/f3be56ad706b999234c6a7758f16fca3dc0a47e4))
+
 ## v0.6.0 (2021-10-06)
 ### Feature
 * Support parametrized fixtures ([`e9a95c4`](https://github.com/kalekundert/parametrize_from_file/commit/e9a95c4c324f9af7579cb0c6352f1292c7e7b9d7))

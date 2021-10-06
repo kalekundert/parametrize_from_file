@@ -35,7 +35,7 @@ from .namespace import Namespace
 from .loaders import add_loader, drop_loader
 from .errors import ConfigError
 
-__version__ = '0.6.0'
+__version__ = '0.7.0'
 
 for obj in [parametrize, fixture, Namespace, ConfigError, add_loader, drop_loader, load_parameters]:
     obj.__module__ = 'parametrize_from_file'

@@ -40,6 +40,8 @@ __version__ = '0.7.0'
 for obj in [parametrize, fixture, Namespace, ConfigError, add_loader, drop_loader, load_parameters]:
     obj.__module__ = 'parametrize_from_file'
 
+del obj
+
 # Hack to make the module directly usable as a decorator.  Only works for 
 # python 3.5 or higher.  See this Stack Overflow post:
 # https://stackoverflow.com/questions/1060796/callable-modules

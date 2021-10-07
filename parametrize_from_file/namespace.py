@@ -213,7 +213,6 @@ class Namespace(dict):
 
         Arguments:
             src (str): A snippet of python code to execute.  
-            `unittest.mock.Mock` instances will be returned unchanged.
 
         Returns:
             Namespace: A new namespace containing all of the variables defined 

@@ -18,6 +18,7 @@ requires = [
   'more_itertools',
   'contextlib2',
   'decopatch',
+  'voluptuous',
 ]
 classifiers = [
   'Programming Language :: Python :: 3',
@@ -29,7 +30,6 @@ test = [
   'pytest',
   'pytest-cov',
   'coveralls',
-  'voluptuous',
   'numpy',
 ]
 doc = [

@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.1 (2021-10-07)
+### Fix
+* Include voluptuous dependency ([`62fc60b`](https://github.com/kalekundert/parametrize_from_file/commit/62fc60ba8e1dfe0ab93a8f96b9e3b8e2dca1292d))
+
 ## v0.7.0 (2021-10-06)
 ### Feature
 * Support eval/exec'ing mocks ([`121995a`](https://github.com/kalekundert/parametrize_from_file/commit/121995a6799334ed534a26aecfa5d23331f90d61))

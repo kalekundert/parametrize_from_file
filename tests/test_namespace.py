@@ -147,6 +147,17 @@ def test_copy():
     assert ns1 == {'a': 1}
     assert ns2 == {'a': 1, 'b': 2}
 
+def test_copy_unpickleable():
+    # Only globally-defined functions can be pickled.
+    def unpickleable():
+        pass
+
+    ns1 = Namespace(a=unpickleable)
+    ns2 = ns1.copy().use(b=2)
+
+    assert ns1 == {'a': unpickleable}
+    assert ns2 == {'a': unpickleable, 'b': 2}
+
 @pytest.mark.parametrize(
         'globals, args, kwargs, expected', [
             # Basic data types:

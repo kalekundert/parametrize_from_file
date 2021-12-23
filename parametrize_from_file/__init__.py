@@ -35,6 +35,11 @@ from .namespace import Namespace, star
 from .loaders import add_loader, drop_loader
 from .errors import ConfigError
 
+try:
+    from . import voluptuous
+except ImportError:
+    pass
+
 __version__ = '0.8.0'
 
 for obj in [parametrize, fixture, Namespace, star, ConfigError, add_loader, drop_loader, load_parameters]:

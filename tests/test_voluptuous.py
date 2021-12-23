@@ -25,10 +25,11 @@ def test_exec_and_lookup_err(globals, src, key, error):
         ns.exec_and_lookup(key)(src)
 
 @SharedParams.error_err
-def test_error_err(globals, params, error):
+def test_error_err(globals, params, trigger_error, expected_error):
     ns = Namespace(globals)
     with pytest.raises(Invalid):
-        ns.error(params)
+        with ns.error(params):
+            raise trigger_error
 
 def test_error_or():
     ns = Namespace(E=MockError1)

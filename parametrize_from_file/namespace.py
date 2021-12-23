@@ -467,14 +467,12 @@ class ExpectError:
         self.exc_info = self.raises_cm.__enter__()
 
     def __exit__(self, *args):
-        __tracebackhide__ = True
-
         if self.raises_cm.__exit__(*args):
             ns = self.namespace
             exc = self.exc_info.value
 
             for msg in self.messages:
-                assert msg in str(exc)
+                assert msg in str(exc), f'{msg!r} not in {str(exc)!r}'
 
             for pat in self.patterns:
                 self.exc_info.match(pat)

@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.8.0 (2021-12-23)
+### Feature
+* Allow exec() and eval() to be deferred ([`b8cf9d5`](https://github.com/kalekundert/parametrize_from_file/commit/b8cf9d5a10fa9389fb4f90980cce5cc48b30a5b0))
+* Make namespaces immutable, add more error checks ([`8e52066`](https://github.com/kalekundert/parametrize_from_file/commit/8e52066babd80bee0ca3ff2786ddb325ad16110e))
+
 ## v0.7.1 (2021-10-07)
 ### Fix
 * Include voluptuous dependency ([`62fc60b`](https://github.com/kalekundert/parametrize_from_file/commit/62fc60ba8e1dfe0ab93a8f96b9e3b8e2dca1292d))

@@ -13,16 +13,10 @@ def test_eval_err(globals, args, kwargs, error):
         ns.eval(*args, **kwargs)
 
 @SharedParams.exec_err
-def test_exec_err(globals, src, error):
+def test_exec_err(globals, src, kwargs, error):
     ns = Namespace(globals)
     with pytest.raises(Invalid):
-        ns.exec(src)
-
-@SharedParams.exec_and_lookup_err
-def test_exec_and_lookup_err(globals, src, key, error):
-    ns = Namespace(globals)
-    with pytest.raises(Invalid):
-        ns.exec_and_lookup(key)(src)
+        ns.exec(src, **kwargs)
 
 @SharedParams.error_err
 def test_error_err(globals, params, trigger_error, expected_error):

@@ -5,8 +5,8 @@ from pytest import approx
 from voluptuous import Schema, Optional
 from parametrize_from_file.voluptuous import Namespace
 
-with_math = Namespace().all(math)
-with_vec = with_math.copy().all(vector)
+with_math = Namespace('from math import *')
+with_vec = with_math.fork('from vector import *')
 
 @parametrize_from_file(
         schema=Schema({

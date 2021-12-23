@@ -30,7 +30,6 @@ rst_epilog = """\
 .. |NS| replace:: :py:class:`Namespace <parametrize_from_file.Namespace>`
 .. |NS_eval| replace:: :py:class:`Namespace.eval <parametrize_from_file.Namespace.eval>`
 .. |NS_exec| replace:: :py:class:`Namespace.exec <parametrize_from_file.Namespace.exec>`
-.. |NS_exec_lookup| replace:: :py:class:`Namespace.exec_and_lookup <parametrize_from_file.Namespace.exec_and_lookup>`
 .. |NS_error| replace:: :py:class:`Namespace.error <parametrize_from_file.Namespace.error>`
 .. |MagicMock| replace:: :py:class:`MagicMock <unittest.mock.MagicMock>`
 """

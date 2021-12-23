@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from .namespace import Namespace as BaseNamespace
+from .namespace import Namespace as BaseNamespace, SENTINEL
 from voluptuous import Schema, Optional, Invalid, Or, All
 from unittest.mock import MagicMock
 from tidyexc import only_raise
@@ -23,22 +23,13 @@ class Namespace(BaseNamespace):
         return super().eval(*src, **kwargs)
 
     @only_raise(Invalid)
-    def exec(self, src):
+    def exec(self, src=SENTINEL, **kwargs):
         """
         |NS_exec|, with tweaks to work better with voluptuous_.
 
         See `eval` for details.
         """
-        return super().exec(src)
-
-    def exec_and_lookup(self, key):
-        """
-        |NS_exec_lookup|, with tweaks to work better with voluptuous_.
-
-        See `eval` for details.
-        """
-        f = super().exec_and_lookup(key)
-        return only_raise(Invalid)(f)
+        return super().exec(src, **kwargs)
 
     @only_raise(Invalid)
     def error(self, params):

@@ -3,6 +3,7 @@
 import pytest, sys, os
 from unittest.mock import Mock, MagicMock
 from parametrize_from_file import Namespace, star
+from operator import itemgetter
 
 class MockError1(Exception):
 
@@ -15,6 +16,18 @@ class MockError1a(MockError1):
 
 class MockError2(Exception):
     pass
+
+class IgnoreMissing:
+
+    def __init__(self, items):
+        self.items = items
+
+    def __repr__(self):
+        return f'IgnoreMissing({self.items!r})'
+
+    def __eq__(self, other):
+        subset = {k: other[k] for k in self.items if k in other}
+        return subset == self.items
 
 class SharedParams:
     init_fork = pytest.mark.parametrize(
@@ -66,11 +79,11 @@ class SharedParams:
                 ({'a': 1}, ['a + 1', 'b + 2'], {}, NameError),
                 ({'a': 1}, [['b + 1']], {}, NameError),
                 ({'a': 1}, [{'a': 'b + 1'}], {}, NameError),
-                ({'a': 1}, [{'b': '1'}], {'eval_keys': True}, NameError),
+                ({'a': 1}, [{'b': '1'}], {'keys': True}, NameError),
 
                 # Unhashable keys:
-                ({'a': 1}, [{'[a]': '1'}], {'eval_keys': True}, TypeError),
-                ({'a': 1}, [{'{a: 1}': '1'}], {'eval_keys': True}, TypeError),
+                ({'a': 1}, [{'[a]': '1'}], {'keys': True}, TypeError),
+                ({'a': 1}, [{'{a: 1}': '1'}], {'keys': True}, TypeError),
 
                 # Regular errors:
                 ({}, ['1/0'], {}, ZeroDivisionError),
@@ -83,19 +96,12 @@ class SharedParams:
             ],
     )
     exec_err = pytest.mark.parametrize(
-            'globals, src, error', [
-                ({'a': 1}, 'b', NameError),
-                ({'a': 1}, '1/0', ZeroDivisionError),
-                ({'a': 1}, 1, TypeError),
-            ],
-    )
-    exec_and_lookup_err = pytest.mark.parametrize(
-            'globals, src, key, error', [
-                ({'a': 1}, 'b', '', NameError),
-                ({'a': 1}, '1/0', '', ZeroDivisionError),
-                ({'a': 1}, 1, '', TypeError),
-                ({'a': 1}, 'b = a + 1', 'c', KeyError),
-                ({'a': 1}, 'b = a + 1', lambda d: d['c'], KeyError),
+            'globals, src, kwargs, error', [
+                ({'a': 1}, 'b', {}, NameError),
+                ({'a': 1}, '1/0', {}, ZeroDivisionError),
+                ({'a': 1}, 1, {}, TypeError),
+                ({'a': 1}, 'b = a + 1', {'get': 'c'}, KeyError),
+                ({'a': 1}, 'b = a + 1', {'get': itemgetter('c')}, KeyError),
             ],
     )
     error_err = pytest.mark.parametrize(
@@ -175,28 +181,141 @@ def test_star_2():
     assert star(mock_module_all) == {'b': 2}
 
 @pytest.mark.parametrize(
-        'globals, args, kwargs, expected', [
+        'globals, args, kwargs, invoke, expected', [
             # Basic data types:
-            ({'a': 1}, ['a + 1'], {}, 2),
-            ({'a': 1}, ['a + 1', 'a + 2'], {}, [2, 3]),
-            ({'a': 1}, [['a + 1']], {}, [2]),
-            ({'a': 1}, [['a + 1', 'a + 2']], {}, [2, 3]),
-            ({'a': 1}, [{'a': 'a + 1'}], {}, {'a': 2}),
-            ({'a': 1}, [{'a': 'a + 1'}], {'eval_keys': True}, {1: 2}),
-            ({'a': 1}, [{'a': 'a + 1', 'b': 'a + 2'}], {}, {'a': 2, 'b': 3}),
+            (
+                {'a': 1},
+                ['a + 1'],
+                {},
+                lambda f: f,
+                2,
+            ), (
+                {'a': 1},
+                ['a + 1', 'a + 2'],
+                {},
+                lambda f: f,
+                [2, 3],
+            ), (
+                {'a': 1},
+                [['a + 1']],
+                {},
+                lambda f: f,
+                [2],
+            ), (
+                {'a': 1},
+                [['a + 1', 'a + 2']],
+                {},
+                lambda f: f,
+                [2, 3],
+            ), (
+                {'a': 1},
+                [{'a': 'a + 1'}],
+                {},
+                lambda f: f,
+                {'a': 2},
+            ), (
+                {'a': 1},
+                [{'a': 'a + 1'}],
+                {'keys': True},
+                lambda f: f,
+                {1: 2},
+            ), (
+                {'a': 1},
+                [{'a': 'a + 1', 'b': 'a + 2'}],
+                {},
+                lambda f: f,
+                {'a': 2, 'b': 3},
+            ),
 
             # Recursion:
-            ({'a': 1}, [[['a + 1']]], {}, [[2]]),
-            ({'a': 1}, [[{'a': 'a + 1'}]], {}, [{'a': 2}]),
-            ({'a': 1}, [{'a': ['a + 1']}], {}, {'a': [2]}),
-            ({'a': 1}, [{'a': ['a + 1']}], {'eval_keys': True}, {1: [2]}),
-            ({'a': 1}, [{'a': {'b': 'a + 1'}}], {}, {'a': {'b': 2}}),
-            ({'a': 1}, [{'a': {'a+1': 'a+2'}}], {'eval_keys': True}, {1: {2: 3}}),
+            (
+                {'a': 1},
+                [[['a + 1']]],
+                {},
+                lambda f: f,
+                [[2]],
+            ), (
+                {'a': 1},
+                [[{'a': 'a + 1'}]],
+                {},
+                lambda f: f,
+                [{'a': 2}],
+            ), (
+                {'a': 1},
+                [{'a': ['a + 1']}],
+                {},
+                lambda f: f,
+                {'a': [2]},
+            ), (
+                {'a': 1},
+                [{'a': ['a + 1']}],
+                {'keys': True},
+                lambda f: f,
+                {1: [2]},
+            ), (
+                {'a': 1},
+                [{'a': {'b': 'a + 1'}}],
+                {},
+                lambda f: f,
+                {'a': {'b': 2}},
+            ), (
+                {'a': 1},
+                [{'a': {'a+1': 'a+2'}}],
+                {'keys': True},
+                lambda f: f,
+                {1: {2: 3}},
+            ),
+
+            # Deferral
+            (
+                {'a': 1},
+                [],
+                {},
+                lambda f: f('a + 1'),
+                2,
+            ), (
+                {'a': 1},
+                ['a + 1'],
+                {'defer': True},
+                lambda f: f(),
+                2,
+            ), (
+                {},
+                ['1/0'],
+                {'defer': True},
+                lambda f: 'no error',
+                'no error',
+            ), (
+                {'a': 1},
+                [{'a': 'a + 1'}],
+                {'defer': True, 'keys': True},
+                lambda f: f(),
+                {1: 2},
+            ), (
+                {'a': 1},
+                [],
+                {'defer': True},
+                lambda f: f('a + 1')(),
+                2,
+            ), (
+                {},
+                [],
+                {'defer': True},
+                lambda f: f('1/0') and 'no error',
+                'no error',
+            ), (
+                {'a': 1},
+                [],
+                {'defer': True, 'keys': True},
+                lambda f: f({'a': 'a + 1'})(),
+                {1: 2},
+            ),
         ],
 )
-def test_eval(globals, args, kwargs, expected):
+def test_eval(globals, args, kwargs, invoke, expected):
     ns = Namespace(globals)
-    assert ns.eval(*args, **kwargs) == expected
+    f = ns.eval(*args, **kwargs)
+    assert invoke(f) == expected
 
 @pytest.mark.parametrize(
         'mock', [Mock(), MagicMock()],
@@ -211,7 +330,91 @@ def test_eval_err(globals, args, kwargs, error):
     with pytest.raises(error):
         ns.eval(*args, **kwargs)
 
-def test_exec():
+@pytest.mark.parametrize(
+        'globals, args, kwargs, invoke, expected', [
+            (
+                {'a': 1},
+                ['b = a + 1'],
+                {},
+                lambda f: f,
+                IgnoreMissing({'a': 1, 'b': 2}),
+            ),
+
+            # Deferral
+            (
+                {'a': 1},
+                [],
+                {},
+                lambda f: f('b = a + 1'),
+                IgnoreMissing({'a': 1, 'b': 2}),
+            ), (
+                {'a': 1},
+                ['b = a + 1'],
+                {'defer': True},
+                lambda f: f(),
+                IgnoreMissing({'a': 1, 'b': 2}),
+            ), (
+                {},
+                ['1/0'],
+                {'defer': True},
+                lambda f: 'no error',
+                'no error',
+            ), (
+                {'a': 1},
+                [],
+                {'defer': True},
+                lambda f: f('b = a + 1')(),
+                IgnoreMissing({'a': 1, 'b': 2}),
+            ), (
+                {},
+                [],
+                {'defer': True},
+                lambda f: f('1/0') and 'no error',
+                'no error',
+            ),
+
+            # Name lookup
+            (
+                {'a': 1},
+                ['b = a + 1'],
+                {'get': 'b'},
+                lambda f: f,
+                2,
+            ), (
+                {'a': 1},
+                [],
+                {'get': 'b'},
+                lambda f: f('b = a + 1'),
+                2,
+            ), (
+                {'a': 1},
+                [],
+                {'get': itemgetter('b')},
+                lambda f: f('b = a + 1'),
+                2,
+            ), (
+                {'a': 1},
+                [],
+                {'get': 'b', 'defer': True},
+                lambda f: f('b = a + 1')(),
+                2,
+            ), (
+                {},
+                [],
+                {'get': 'b', 'defer': True},
+                lambda f: f('1/0') and 'no error',
+                'no error',
+            ),
+        ],
+)
+def test_exec(globals, args, kwargs, invoke, expected):
+    ns1 = Namespace(globals)
+    f = ns1.exec(*args, **kwargs)
+
+    assert ns1 == globals
+    assert invoke(f) == expected
+
+def test_exec_immutable():
     ns1 = Namespace(a=1)
     ns2 = ns1.exec('b = a + 1')
     ns3 = ns2.exec('c = b + 1')
@@ -236,26 +439,10 @@ def test_exec_mock(mock):
     assert ns.exec(mock) is mock
 
 @SharedParams.exec_err
-def test_exec_err(globals, src, error):
+def test_exec_err(globals, src, kwargs, error):
     ns = Namespace(globals)
     with pytest.raises(error):
-        ns.exec(src)
-
-@pytest.mark.parametrize(
-        'globals, src, key, expected', [
-            ({'a': 1}, 'b = a + 1', 'b', 2),
-            ({'a': 1}, 'b = a + 1', lambda d: d['b'], 2),
-        ],
-)
-def test_exec_and_lookup(globals, src, key, expected):
-    ns = Namespace(globals)
-    assert ns.exec_and_lookup(key)(src) == expected
-
-@SharedParams.exec_and_lookup_err
-def test_exec_and_lookup_err(globals, src, key, error):
-    ns = Namespace(globals)
-    with pytest.raises(error):
-        ns.exec_and_lookup(key)(src)
+        ns.exec(src, **kwargs)
 
 @pytest.mark.parametrize(
         'globals, params, expected_errors, unexpected_errors', [
@@ -353,8 +540,37 @@ def test_error_err(globals, params, trigger_error, expected_error):
         with ns.error(params):
             raise trigger_error
 
-def test_error_repr():
-    ns = Namespace(E=MockError1)
-    cm = ns.error('E')
-    assert repr(cm) == "<ExpectError type='E'>"
+@pytest.mark.parametrize(
+        'globals, params, expected', [
+            (
+                {'E': MockError1},
+                'none',
+                "<ExpectSuccess>",
+            ), (
+                {'E': MockError1},
+                'E',
+                "<ExpectError type='E'>",
+            ), (
+                {'E': MockError1},
+                {'type': 'E', 'message': 'a'},
+                "<ExpectError type='E' messages=['a']>",
+            ), (
+                {'E': MockError1},
+                {'type': 'E', 'pattern': 'a'},
+                "<ExpectError type='E' patterns=['a']>",
+            ), (
+                {'E': MockError1},
+                {'type': 'E', 'attrs': {'a': '1'}},
+                "<ExpectError type='E' attrs={'a': '1'}>",
+            ), (
+                {'E': MockError1},
+                {'type': 'E', 'assertions': 'assert True'},
+                "<ExpectError type='E' assertions='assert True'>",
+            ),
+        ],
+)
+def test_error_repr(globals, params, expected):
+    ns = Namespace(globals)
+    cm = ns.error(params)
+    assert repr(cm) == expected
 

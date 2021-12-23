@@ -7,6 +7,8 @@ from contextlib2 import nullcontext
 from functools import partial
 from unittest.mock import Mock
 
+SENTINEL = object()
+
 class Namespace(Mapping):
     """\
     Evaluate and/or execute snippets of python code, with powerful control over the 
@@ -154,7 +156,7 @@ class Namespace(Mapping):
         """
         return self.__class__(self, *args, **kwargs)
 
-    def eval(self, *src, eval_keys=False):
+    def eval(self, *src, keys=False, defer=False):
         """
         Evaluate the given expression within this namespace.
         this object.
@@ -163,98 +165,158 @@ class Namespace(Mapping):
             src (str,list,dict):
                 The expression (or expressions) to evaluate.  Strings are 
                 directly evaluated.  List items and dict values are recursively 
-                evaluated.  Dict keys are not evaluated unless *eval_keys* is 
+                evaluated.  Dict keys are not evaluated unless *keys* is 
                 true.  This allows you to switch freely between structured text 
                 and python syntax, depending on which makes most sense for each 
                 particular input.
 
-            eval_keys (bool):
+            keys (bool):
                 If true, evaluate dictionary keys.  Disabled by default because 
                 most dictionary keys are strings, and it's annoying to have to 
                 quote them.
 
-            deferred (bool):
-                If true, return a no-argument callable that will
+            defer (bool):
+                If true, instead of actually evaluating the given expressions, 
+                return a no-argument callable that will evaluate them when 
+                called.  The purpose of this is to make it possible to specify 
+                that a test parameter should be evaluated in a schema, but to 
+                defer actually evaluating it until inside the test function.
 
         Returns:
-            Any: The result of evaluating the given expressions.  If no 
-            expressions were given, a callable will be returned 
+            Any: If any *src* expressions were given: The result(s) of evaluating 
+            the given expression(s).
 
-        `unittest.mock.Mock` instances are handled specially by this method.  
-        Specifically, they are returned unchanged (without being evaluated).  
-        This special case exists because `voluptuous.Namespace.error_or` uses
-        `unittest.mock.Mock` instances as placeholders when an exception is 
-        expected.
+            If no *src* expressions were given: A `functools.partial` version 
+            of this function that will remember any specified keyword 
+            arguments.
+
+        Examples:
+            Basic usage::
+
+                >>> with_a = Namespace(a=1)
+                >>> with_a.eval('a + 1')
+                2
+
+            Control whether or not dictionary keys are evaluated::
+
+                >>> with_a.eval({'a': '2'})
+                {'a': 2}
+                >>> with_a.eval({'a': '2'}, keys=True)
+                {1: 2}
+
+            Use a schema to specify that a test parameter should be evaluated, 
+            but defer that evaluation until within the test::
+                
+                >>> @parametrize_from_file(  # doctest: +SKIP
+                ...         schema={
+                ...             'expr': with_a.eval(defer=True),
+                ...         },
+                ... )
+                ... def test_snippet(expr)
+                ...     expr = expr()
+
+        Details:
+            `unittest.mock.Mock` instances are handled specially by this 
+            method.  Specifically, they are returned unchanged (i.e. without 
+            being evaluated).  This special case exists because 
+            `voluptuous.Namespace.error_or` uses
+            `unittest.mock.Mock` instances as placeholders when an exception is 
+            expected.
         """
+        if not src:
+            return partial(self.eval, keys=keys, defer=defer)
+        if defer:
+            return partial(self.eval, *src, keys=keys)
+
         src = src[0] if len(src) == 1 else list(src)
-        recurse = partial(self.eval, eval_keys=eval_keys)
+        recurse = partial(self.eval, keys=keys)
 
         if type(src) is list:
             return [recurse(x) for x in src]
         elif type(src) is dict:
-            f = recurse if eval_keys else lambda x: x
+            f = recurse if keys else lambda x: x
             return {f(k): recurse(v) for k, v in src.items()}
         elif isinstance(src, Mock):
             return src
         else:
             return eval(src, self._dict)
 
-    def exec(self, src):
+    def exec(self, src=SENTINEL, get=SENTINEL, defer=False):
         """
         Execute the given python snippet within this namespace.
 
         Arguments:
-            src (str): A snippet of python code to execute.  
+            src (str): A snippet of python code to execute.
+
+            get (str, collections.abc.Callable):
+                If string: The name of a variable defined in the given snippet 
+                to look up and pass on to the caller.
+                
+                If callable: The given function will be passed a read-only 
+                dictionary containing all the names defined in the given 
+                snippet.  Whatever that function returns will be passed on to 
+                the caller.
 
         Returns:
-            Namespace: A new namespace containing all of the variables defined 
-            in the snippet.
+            Any: If *src* was specified and *get* was not: A new `Namespace` 
+            containing all of the variables defined in the snippet.
 
-        `unittest.mock.Mock` instances are handled specially by this method.  
-        Specifically, they are returned unchanged (without being executed).  
-        This special case exists because `voluptuous.Namespace.error_or` uses
-        `unittest.mock.Mock` instances as placeholders when an exception is 
-        expected.
+            If *src* and *get* were specified: The value(s) of the indicated 
+            variable(s) defined the snippet.
+
+            If *src* was not specified: A `functools.partial` version of this 
+            function that will remember any specified keyword arguments.
+
+        Examples:
+            Basic usage::
+
+                >>> with_a = Namespace(a=1)
+                >>> with_b = ns1.exec('b = a + 1')
+                >>> with_a
+                Namespace({'a': 1})
+                >>> with_b
+                Namespace({'a': 1, 'b': 2})
+
+            Get a specific value from the executed snippet::
+
+                >>> with_a.exec('b = a + 1', get='b')
+                2
+
+            Use a schema to specify that a test parameter should be executed, 
+            but defer that execution until within the test::
+                
+                >>> @parametrize_from_file(  # doctest: +SKIP
+                ...         schema={
+                ...             'snippet': with_a.exec(defer=True),
+                ...         },
+                ... )
+                ... def test_snippet(snippet)
+                ...     snippet = snippet()
+
+        Details:
+            `unittest.mock.Mock` instances are handled specially by this 
+            method.  Specifically, they are returned unchanged (i.e. without 
+            being executed).  This special case exists because 
+            `voluptuous.Namespace.error_or` uses
+            `unittest.mock.Mock` instances as placeholders when an exception is 
+            expected.
         """
+        if src is SENTINEL:
+            return partial(self.exec, get=get, defer=defer)
+        if defer:
+            return partial(self.exec, src, get=get)
         if isinstance(src, Mock):
             return src
 
         fork = self.fork()
         exec(src, fork._dict)
-        return fork
 
-    def exec_and_lookup(self, key):
-        """
-        Execute a python snippet and return a specific variable.
-
-        Arguments:
-            key (str, collections.abc.Callable):
-                If string: the name of the variable to return.  
-                
-                If callable: The given function will be passed a dictionary 
-                containing all the names defined in the given snippet.  
-                Whatever that function returns will be passed on to the caller.
-
-        Returns:
-            collections.abc.Callable:
-                A closure that takes a snippet of python code, executes it, and 
-                returns the value indicated by the given key.  While it may 
-                seem counter-intuitive for this method to return a 
-                snippet-executing function instead of simply executing snippets 
-                itself, this API is designed to be used when defining schemas.  
-                Be aware that having schemas execute large blocks of code is 
-                usually a :ref:`bad idea <schema-be-careful>`, though.
-        """
-
-        def do_exec(src):
-            globals = self.exec(src)
-
-            if callable(key):
-                return key(globals)
-            else:
-                return globals[key]
-
-        return do_exec
+        if get is SENTINEL:
+            return fork
+        elif callable(get):
+            return get(fork)
+        else:
+            return fork[get]
 
     def error(self, params):
         """\
@@ -263,14 +325,15 @@ class Namespace(Mapping):
 
         Arguments:
             params (str, list, dict):
-                This argument specifies what exception to expect (and 
+                This argument specifies what kind of exception to expect (and 
                 optionally how to check various aspects of it).
 
                 If string: A string that evaluates to an exception type.  This 
                 can also be ``"none"`` to specify that the returned context 
                 manager should not expect any exception to be raised.
 
-                If list: A list of the above strings (excluding ``"none"``).
+                If list: A list of the above strings that evaluate to exception 
+                types.  The actual exception must be one of these types.
 
                 If dict: The following keys are understood:
 
@@ -354,6 +417,9 @@ class Namespace(Mapping):
         return err
 
 class ExpectSuccess(nullcontext):
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__}>'
 
     def __bool__(self):
         return False

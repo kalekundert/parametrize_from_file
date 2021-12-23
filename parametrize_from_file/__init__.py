@@ -40,7 +40,7 @@ try:
 except ImportError:
     pass
 
-__version__ = '0.8.0'
+__version__ = '0.9.0'
 
 for obj in [parametrize, fixture, Namespace, star, ConfigError, add_loader, drop_loader, load_parameters]:
     obj.__module__ = 'parametrize_from_file'

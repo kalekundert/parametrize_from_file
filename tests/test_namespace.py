@@ -389,6 +389,18 @@ def test_eval_err(globals, args, kwargs, error):
             ), (
                 {'a': 1},
                 [],
+                {'get': ('a', 'b')},
+                lambda f: f('b = a + 1'),
+                (1, 2),
+            ), (
+                {'a': 1},
+                [],
+                {'get': ['a', 'b']},
+                lambda f: f('b = a + 1'),
+                (1, 2),
+            ), (
+                {'a': 1},
+                [],
                 {'get': itemgetter('b')},
                 lambda f: f('b = a + 1'),
                 2,

@@ -2,7 +2,7 @@
 
 import pytest
 from copy import copy
-from collections.abc import Mapping
+from collections.abc import Mapping, Iterable
 from contextlib2 import nullcontext
 from functools import partial
 from unittest.mock import Mock
@@ -248,9 +248,13 @@ class Namespace(Mapping):
         Arguments:
             src (str): A snippet of python code to execute.
 
-            get (str, collections.abc.Callable):
+            get (str, collections.abc.Iterable, collections.abc.Callable):
                 If string: The name of a variable defined in the given snippet 
                 to look up and pass on to the caller.
+
+                If iterable: The names of variables defined in the given 
+                snippet to look up and return to the caller.  The return value 
+                will be a tuple with the same length as the given iterable.
                 
                 If callable: The given function will be passed a read-only 
                 dictionary containing all the names defined in the given 
@@ -315,6 +319,8 @@ class Namespace(Mapping):
             return fork
         elif callable(get):
             return get(fork)
+        elif isinstance(get, Iterable) and not isinstance(get, str):
+            return tuple(fork[x] for x in get)
         else:
             return fork[get]
 

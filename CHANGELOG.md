@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.10.0 (2022-01-04)
+### Feature
+* Get multiple variables from executed snippets ([`c43c57a`](https://github.com/kalekundert/parametrize_from_file/commit/c43c57af9045586f5ab81f9cd3c86bb523d6c60b))
+
 ## v0.9.1 (2021-12-23)
 ### Fix
 * Improve debug message ([`08fa038`](https://github.com/kalekundert/parametrize_from_file/commit/08fa0382d20bbc73312f11232105fa5a1f325357))

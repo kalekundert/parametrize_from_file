@@ -159,7 +159,6 @@ class Namespace(Mapping):
     def eval(self, *src, keys=False, defer=False):
         """
         Evaluate the given expression within this namespace.
-        this object.
 
         Arguments:
             src (str,list,dict):
@@ -275,7 +274,7 @@ class Namespace(Mapping):
             Basic usage::
 
                 >>> with_a = Namespace(a=1)
-                >>> with_b = ns1.exec('b = a + 1')
+                >>> with_b = with_a.exec('b = a + 1')
                 >>> with_a
                 Namespace({'a': 1})
                 >>> with_b
@@ -393,7 +392,7 @@ class Namespace(Mapping):
                 ...     pass
                 ...
                 >>> with_err = Namespace(MyError=MyError)
-                >>> p = {'type': 'MyError', 'message': r'\\d+'}
+                >>> p = {'type': 'MyError', 'pattern': r'\\d+'}
                 >>> with with_err.error(p):
                 ...    raise MyError('404')
 

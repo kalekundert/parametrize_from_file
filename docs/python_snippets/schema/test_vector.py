@@ -6,7 +6,7 @@ from parametrize_from_file.voluptuous import Namespace
 
 # Define these objects globally, because they will be useful for many tests.
 with_math = Namespace('from math import *')
-with_vec = with_math.copy().use('from vector import *')
+with_vec = Namespace(with_math, 'from vector import *')
 
 @parametrize_from_file(
         schema=Schema({

@@ -1,5 +1,6 @@
 import vector
 import parametrize_from_file
+from parametrize_from_file import Namespace
 
 with_vec = Namespace("from vector import *")
 

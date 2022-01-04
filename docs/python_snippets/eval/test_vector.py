@@ -10,4 +10,4 @@ with_vec = Namespace('from vector import *')
 @parametrize_from_file
 def test_dot(a, b, expected):
     a, b, expected = with_vec.eval(a, b, expected)
-    assert dot(a, b) == approx(expected)
+    assert vector.dot(a, b) == approx(expected)

@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.11.0 (2022-01-12)
+### Feature
+* Add empty_ok() for voluptuous schema ([`6fd446d`](https://github.com/kalekundert/parametrize_from_file/commit/6fd446dd8017f38cfff02beec6c0e1d7a90e2379))
+
+### Documentation
+* Fix typos ([`38cea18`](https://github.com/kalekundert/parametrize_from_file/commit/38cea1863d62ec1202dfc94ed730e099c38e7bb8))
+* Fix python snippet examples ([`5497205`](https://github.com/kalekundert/parametrize_from_file/commit/5497205cd718d4898659f4924fd81a139b1b2d4e))
+
 ## v0.10.0 (2022-01-04)
 ### Feature
 * Get multiple variables from executed snippets ([`c43c57a`](https://github.com/kalekundert/parametrize_from_file/commit/c43c57af9045586f5ab81f9cd3c86bb523d6c60b))

@@ -2,7 +2,7 @@
 
 import pytest
 from voluptuous import Schema, Invalid, Optional
-from parametrize_from_file.voluptuous import Namespace
+from parametrize_from_file.voluptuous import Namespace, empty_ok
 from test_namespace import SharedParams, MockError1
 from unittest.mock import MagicMock
 
@@ -71,3 +71,13 @@ def test_error_or_type_err():
         schema = Schema({
             **ns.error_or({str: int}),
         })
+
+@pytest.mark.parametrize(
+        'schema, value, expected', [
+            ([int], [1], [1]),
+            ([int], [], []),
+            ([int], '', []),
+        ],
+)
+def test_empty_ok(schema, value, expected):
+    assert empty_ok(schema)(value) == expected

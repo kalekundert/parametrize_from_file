@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from .namespace import Namespace as BaseNamespace, SENTINEL
-from voluptuous import Schema, Optional, Invalid, Or, All
+from voluptuous import Schema, Optional, Invalid, Or, And, All
 from unittest.mock import MagicMock
 from tidyexc import only_raise
 
@@ -192,4 +192,17 @@ class Namespace(BaseNamespace):
                 raise TypeError("'error_or()' only supports the following key types: str, voluptuous.Optional")
 
         return schema
+
+
+
+def empty_ok(container):
+    """\
+    Return a schema that will either accept a container of the given 
+    specification, or an empty string.  The empty string will be replaced 
+    by an empty container of the given type.
+
+    This function is useful in conjunction with NestedText, which makes it easy 
+    to use empty strings to represent empty containers.
+    """
+    return Or(container, And('', lambda y: type(container)()))
 

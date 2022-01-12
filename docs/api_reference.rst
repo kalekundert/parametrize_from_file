@@ -10,6 +10,7 @@ API reference
    parametrize_from_file.fixture
    parametrize_from_file.Namespace
    parametrize_from_file.voluptuous.Namespace
+   parametrize_from_file.voluptuous.empty_ok
    parametrize_from_file.star
    parametrize_from_file.add_loader
    parametrize_from_file.drop_loader

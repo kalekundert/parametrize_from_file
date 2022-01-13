@@ -50,6 +50,7 @@ doc = [
 addopts = "--ignore docs --doctest-modules --doctest-glob='*.rst'"
 doctest_optionflags = 'NORMALIZE_WHITESPACE'
 markers = ["slow"]
+filterwarnings = ["error"]
 
 [tool.pccc]
 header_length = 72

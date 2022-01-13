@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.11.1 (2022-01-13)
+### Fix
+* Migrate to more_itertools.zip_broadcast() ([`cdf37c3`](https://github.com/kalekundert/parametrize_from_file/commit/cdf37c377fc7c65b6852c35e277b82cec7c0b864))
+
 ## v0.11.0 (2022-01-12)
 ### Feature
 * Add empty_ok() for voluptuous schema ([`6fd446d`](https://github.com/kalekundert/parametrize_from_file/commit/6fd446dd8017f38cfff02beec6c0e1d7a90e2379))

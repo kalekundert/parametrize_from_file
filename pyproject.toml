@@ -15,7 +15,7 @@ requires = [
   'nestedtext',
   'tidyexc',
   'pytest',
-  'more_itertools',
+  'more_itertools~=8.10',
   'contextlib2',
   'decopatch',
   'voluptuous',

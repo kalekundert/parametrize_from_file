@@ -5,12 +5,12 @@ import inspect
 import decopatch
 
 from .loaders import get_loaders
-from .utils import zip_with_scalars, is_iterable
+from .utils import is_iterable
 from .errors import ConfigError
 from pathlib import Path
 from functools import lru_cache, wraps
 from collections import namedtuple
-from more_itertools import first, UnequalIterablesError
+from more_itertools import first, zip_broadcast, UnequalIterablesError
 from textwrap import indent
 from copy import copy
 
@@ -321,7 +321,7 @@ def load_parameters(
     test_params = []
 
     try:
-        for path_i, key_i in zip_with_scalars(path, key, strict=True):
+        for path_i, key_i in zip_broadcast(path, key, strict=True):
             with ConfigError.add_info(
                     "parameter file: {param_path}",
                     param_path=path_i,

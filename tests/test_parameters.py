@@ -724,7 +724,10 @@ def test_load_parameters(files, get_path, key, expected_keys, expected_values, t
             'a',
             [r'parameter file: .*test\.json', 'top-level key: a'],
         ), (
-            {},
+            {
+                'test_1.json': '{"a": [{"x": 1}]}',
+                'test_2.json': '{"b": [{"x": 2}]}',
+            },
             lambda p: [p / 'test_1.json', p / 'test_2.json'],
             ['a', 'b', 'c'],
             [

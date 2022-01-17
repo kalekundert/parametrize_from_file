@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.12.0 (2022-01-17)
+### Feature
+* Allow deferred eval/exec to be invoked by name ([`08d0bf2`](https://github.com/kalekundert/parametrize_from_file/commit/08d0bf2869989f76a188de98c56891178c80c3cf))
+
 ## v0.11.1 (2022-01-13)
 ### Fix
 * Migrate to more_itertools.zip_broadcast() ([`cdf37c3`](https://github.com/kalekundert/parametrize_from_file/commit/cdf37c377fc7c65b6852c35e277b82cec7c0b864))

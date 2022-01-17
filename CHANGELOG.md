@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.13.0 (2022-01-17)
+### Feature
+* Allow assertions on the direct causes of exceptions ([`d4d2be9`](https://github.com/kalekundert/parametrize_from_file/commit/d4d2be928b25048e3a4fac4edb6b5a54c0958be5))
+
 ## v0.12.0 (2022-01-17)
 ### Feature
 * Allow deferred eval/exec to be invoked by name ([`08d0bf2`](https://github.com/kalekundert/parametrize_from_file/commit/08d0bf2869989f76a188de98c56891178c80c3cf))

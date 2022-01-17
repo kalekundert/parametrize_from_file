@@ -280,6 +280,12 @@ def test_star_2():
                 lambda f: f(),
                 2,
             ), (
+                {'a': 1},
+                ['a + 1'],
+                {'defer': True},
+                lambda f: f.eval(),
+                2,
+            ), (
                 {},
                 ['1/0'],
                 {'defer': True},
@@ -352,6 +358,12 @@ def test_eval_err(globals, args, kwargs, error):
                 ['b = a + 1'],
                 {'defer': True},
                 lambda f: f(),
+                IgnoreMissing({'a': 1, 'b': 2}),
+            ), (
+                {'a': 1},
+                ['b = a + 1'],
+                {'defer': True},
+                lambda f: f.exec(),
                 IgnoreMissing({'a': 1, 'b': 2}),
             ), (
                 {},

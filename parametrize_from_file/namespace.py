@@ -182,12 +182,18 @@ class Namespace(Mapping):
                 defer actually evaluating it until inside the test function.
 
         Returns:
-            Any: If any *src* expressions were given: The result(s) of evaluating 
-            the given expression(s).
-
-            If no *src* expressions were given: A `functools.partial` version 
-            of this function that will remember any specified keyword 
+            Any: If no *src* expressions were given: A `functools.partial` 
+            version of this function that will remember any specified keyword 
             arguments.
+
+            If any *src* expressions were given and the *defer* argument was 
+            True: A `functools.partial` version of this function that will 
+            remember the expressions and keyword arguments given to it.  The 
+            return value will also have an `eval` attribute that aliases the 
+            deferred function.
+
+            If any *src* expressions were given and the *defer* argument was 
+            False: The result(s) of evaluating the given expression(s).
 
         Examples:
             Basic usage::
@@ -208,24 +214,24 @@ class Namespace(Mapping):
                 
                 >>> @parametrize_from_file(  # doctest: +SKIP
                 ...         schema={
-                ...             'expr': with_a.eval(defer=True),
+                ...             'expected': with_a.eval(defer=True),
                 ...         },
                 ... )
-                ... def test_snippet(expr)
-                ...     expr = expr()
+                ... def test_snippet(expected)
+                ...     expected = expected.eval()
 
         Details:
             `unittest.mock.Mock` instances are handled specially by this 
             method.  Specifically, they are returned unchanged (i.e. without 
             being evaluated).  This special case exists because 
-            `voluptuous.Namespace.error_or` uses
-            `unittest.mock.Mock` instances as placeholders when an exception is 
-            expected.
+            `voluptuous.Namespace.error_or` uses `unittest.mock.Mock` instances 
+            as placeholders when an exception is expected.
         """
         if not src:
             return partial(self.eval, keys=keys, defer=defer)
         if defer:
-            return partial(self.eval, *src, keys=keys)
+            f = f.eval = partial(self.eval, *src, keys=keys)
+            return f
 
         src = src[0] if len(src) == 1 else list(src)
         recurse = partial(self.eval, keys=keys)
@@ -260,15 +266,27 @@ class Namespace(Mapping):
                 snippet.  Whatever that function returns will be passed on to 
                 the caller.
 
+            defer (bool):
+                If true, instead of actually evaluating the given snippet, 
+                return a no-argument callable that will evaluate it when 
+                called.  The purpose of this is to make it possible to specify 
+                that a test parameter should be executed in a schema, but to 
+                defer actually executing it until inside the test function.
+
         Returns:
-            Any: If *src* was specified and *get* was not: A new `Namespace` 
+            Any: If *src* was not specified: A `functools.partial` version of 
+            this function that will remember any specified keyword arguments.
+
+            If *src* was specified and the *defer* argument was True: A 
+            `functools.partial` version of this function that will remember the 
+            snippet and keyword arguments given to it.  The return value will 
+            also have an `exec` attribute that aliases the deferred function.
+
+            If *src* was specified and *get* was not: A new `Namespace` 
             containing all of the variables defined in the snippet.
 
             If *src* and *get* were specified: The value(s) of the indicated 
             variable(s) defined the snippet.
-
-            If *src* was not specified: A `functools.partial` version of this 
-            function that will remember any specified keyword arguments.
 
         Examples:
             Basic usage::
@@ -294,7 +312,7 @@ class Namespace(Mapping):
                 ...         },
                 ... )
                 ... def test_snippet(snippet)
-                ...     snippet = snippet()
+                ...     snippet = snippet.exec()
 
         Details:
             `unittest.mock.Mock` instances are handled specially by this 
@@ -307,7 +325,8 @@ class Namespace(Mapping):
         if src is SENTINEL:
             return partial(self.exec, get=get, defer=defer)
         if defer:
-            return partial(self.exec, src, get=get)
+            f = f.exec = partial(self.exec, src, get=get)
+            return f
         if isinstance(src, Mock):
             return src
 

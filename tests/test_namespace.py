@@ -4,6 +4,7 @@ import pytest, sys, os
 from unittest.mock import Mock, MagicMock
 from parametrize_from_file import Namespace, star
 from operator import itemgetter
+from inspect import isclass
 
 class MockError1(Exception):
 
@@ -470,6 +471,7 @@ def test_exec_err(globals, src, kwargs, error):
 
 @pytest.mark.parametrize(
         'globals, params, expected_errors, unexpected_errors', [
+            # Type
             (
                 {'E': MockError1},
                 'none',
@@ -500,7 +502,10 @@ def test_exec_err(globals, src, kwargs, error):
                 {'type': ['E1a', 'E2']},
                 [MockError1a, MockError2],
                 [MockError1()],
-            ), (
+            ),
+
+            # Message
+            (
                 {'E': MockError1},
                 {'type': 'E', 'message': 'a'},
                 [MockError1('a')],
@@ -510,7 +515,10 @@ def test_exec_err(globals, src, kwargs, error):
                 {'type': 'E', 'message': ['a', 'b']},
                 [MockError1('ab'), MockError1('ba')],
                 [MockError1('a'), MockError1('b')],
-            ), (
+            ),
+
+            # Pattern
+            (
                 {'E': MockError1},
                 {'type': 'E', 'pattern': r'\d{3}'},
                 [MockError1('404')],
@@ -520,7 +528,10 @@ def test_exec_err(globals, src, kwargs, error):
                 {'type': 'E', 'pattern': [r'\d{3}', r'\w{4}']},
                 [MockError1('HTTP 404'), MockError1('404 HTTP')],
                 [MockError1(r'\d{3}\w{4}'), MockError1('HTTP'), MockError1('404')],
-            ), (
+            ),
+
+            # Attrs
+            (
                 {'E': MockError1},
                 {'type': 'E', 'attrs': {'a': '1'}},
                 [MockError1(a=1)],
@@ -530,11 +541,47 @@ def test_exec_err(globals, src, kwargs, error):
                 {'type': 'E', 'attrs': {'a': '1', 'b': '2'}},
                 [MockError1(a=1, b=2)],
                 [MockError1(a=1), MockError1(b=2), MockError1(a=1, b=1), MockError1(a=2, b=2)],
-            ), (
+            ),
+
+            # Assertions
+            (
                 {'E': MockError1},
-                {'type': 'E', 'assertions': 'assert err.f() == 1'},
+                {'type': 'E', 'assertions': 'assert exc.f() == 1'},
                 [MockError1(f=lambda: 1)],
                 [MockError1(f=lambda: 2)],
+            ),
+
+            # Cause
+            (
+                {'E1': MockError1, 'E2': MockError2},
+                {'type': 'E1', 'cause': 'True'},
+                [lambda: wrap_error(MockError1, MockError2)],
+                [
+                    MockError1(), 
+                    (MockError2, lambda: wrap_error(MockError1, MockError2, cause=False)),
+                    (MockError1, lambda: wrap_error(MockError2, MockError1)),
+                ],
+            ), (
+                {'E1': MockError1, 'E2': MockError2},
+                {'type': 'E1', 'cause': 'True', 'message': 'a'},
+                [lambda: wrap_error(MockError1('a'), MockError1)],
+                [
+                    (MockError1, lambda: wrap_error(MockError1, MockError1('a'))),
+                ],
+            ), (
+                {'E1': MockError1, 'E2': MockError2},
+                {'type': 'E1', 'cause': 'True', 'pattern': r'\d{3}'},
+                [lambda: wrap_error(MockError1('404'), MockError1('HTTP'))],
+                [
+                    (MockError1, lambda: wrap_error(MockError1('HTTP'), MockError1('404'))),
+                ],
+            ), (
+                {'E1': MockError1, 'E2': MockError2},
+                {'type': 'E1', 'cause': 'True', 'attrs': {'a': '1'}},
+                [lambda: wrap_error(MockError1(a=1), MockError1(a=2))],
+                [
+                    (MockError1, lambda: wrap_error(MockError1(a=2), MockError1(a=1))),
+                ],
             ),
         ],
 )
@@ -544,18 +591,32 @@ def test_error(globals, params, expected_errors, unexpected_errors):
 
     assert bool(cm) == bool(expected_errors)
 
-    for err in expected_errors:
-        with cm:
+    def unpack(err):
+        if isinstance(err, tuple):
+            return err
+        else:
+            return err.__class__, err
+
+    def raise_or_call(err):
+        if isinstance(err, Exception):
             raise err
+        if isclass(err) and issubclass(err, Exception):
+            raise err
+        err()
 
-    if not expected_errors:
+    def noop():
+        pass
+
+    for err in expected_errors or [noop]:
+        print("expected:", err)
         with cm:
-            pass
+            raise_or_call(err)
 
-    for err in unexpected_errors:
-        with pytest.raises((err.__class__, AssertionError)):
+    for err_type, err in map(unpack, unexpected_errors):
+        print("unexpected:", err_type, err)
+        with pytest.raises((err_type, AssertionError)):
             with cm:
-                raise err
+                raise_or_call(err)
     
 @SharedParams.error_err
 def test_error_err(globals, params, trigger_error, expected_error):
@@ -597,4 +658,14 @@ def test_error_repr(globals, params, expected):
     ns = Namespace(globals)
     cm = ns.error(params)
     assert repr(cm) == expected
+
+
+def wrap_error(exc_1, exc_2, cause=True):
+    try:
+        raise exc_1
+    except Exception as err:
+        if cause:
+            raise exc_2 from err
+        else:
+            raise exc_2
 

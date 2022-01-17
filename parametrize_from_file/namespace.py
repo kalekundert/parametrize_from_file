@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import pytest
+import pytest, re
 from copy import copy
 from collections.abc import Mapping, Iterable
 from contextlib2 import nullcontext
@@ -388,6 +388,12 @@ class Namespace(Mapping):
                   available via the *exc* variable.  This field is typically 
                   used to make free-form assertions about the exception object.
 
+                - "cause" (optional): A string that should evaluate to an 
+                  integer 'n'.  All other checks will apply to the n-th direct 
+                  cause of the caught exception, instead of the exception 
+                  itself.  This is useful in cases where the exception you want 
+                  to test is wrapped in some other exception.
+
                 Note that everything is expected to be strings, because this 
                 method is meant to help with parsing exception information from 
                 a text file, e.g. in the NestedText_ format.  All evaluations 
@@ -436,7 +442,8 @@ class Namespace(Mapping):
             err.messages = require_list(params.get('message', []))
             err.patterns = require_list(params.get('pattern', []))
             err.attr_strs = params.get('attrs', {})
-            err.assertions_str = params.get('assertions', {})
+            err.assertions_str = params.get('assertions', '')
+            err.cause_str = params.get('cause', '')
 
         return err
 
@@ -457,13 +464,14 @@ class ExpectError:
     # The only way to support this is to implement the context manager from 
     # scratch.
 
-    def __init__(self, namespace, *, type_str=Exception, messages=[], patterns=[], attr_strs={}, assertions_str=''):
+    def __init__(self, namespace, *, type_str=Exception, messages=[], patterns=[], attr_strs={}, assertions_str='', cause_str=''):
         self.namespace = namespace
         self.type_str = type_str
         self.messages = messages
         self.patterns = patterns
         self.attr_strs = attr_strs
         self.assertions_str = assertions_str
+        self.cause_str = cause_str
 
     def __repr__(self):
         attrs = {
@@ -472,6 +480,7 @@ class ExpectError:
                 'patterns': self.patterns,
                 'attrs': self.attr_strs,
                 'assertions': self.assertions_str,
+                'cause': self.cause_str,
         }
         attr_str = ' '.join(
                 f'{k}={v!r}'
@@ -483,32 +492,40 @@ class ExpectError:
         return True
 
     def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        ns = self.namespace
         type = self.namespace.eval(self.type_str)
         if isinstance(type, list):
             type = tuple(type)
 
-        self.raises_cm = pytest.raises(type)
-        self.exc_info = self.raises_cm.__enter__()
+        assert exc_type is not None, f"DID NOT RAISE {type}"
 
-    def __exit__(self, *args):
-        if self.raises_cm.__exit__(*args):
-            ns = self.namespace
-            exc = self.exc_info.value
+        del exc_type, exc_tb
+        for i in range(ns.eval(self.cause_str or '0')):
+            assert exc_value.__cause__ is not None, f"{exc_value} has no direct cause"
+            exc_value = exc_value.__cause__
 
-            for msg in self.messages:
-                assert msg in str(exc), f'{msg!r} not in {str(exc)!r}'
+        if not isinstance(exc_value, type):
+            return False
 
-            for pat in self.patterns:
-                self.exc_info.match(pat)
+        exc_str = str(exc_value)
 
-            for attr, value_str in self.attr_strs.items():
-                assert hasattr(exc, attr)
-                assert getattr(exc, attr) == ns.eval(value_str)
+        for msg in self.messages:
+            assert msg in exc_str, f'{msg!r} not in {exc_str!r}'
 
-            if self.assertions_str:
-                ns.fork(err=exc).exec(self.assertions_str)
+        for pat in self.patterns:
+            assert re.search(pat, exc_str), "regex pattern {pat!r} does not match {exc_str!r}"
 
-            return True
+        for attr, value_str in self.attr_strs.items():
+            assert hasattr(exc_value, attr)
+            assert getattr(exc_value, attr) == ns.eval(value_str)
+
+        if self.assertions_str:
+            ns.fork(exc=exc_value).exec(self.assertions_str)
+
+        return True
 
 def star(module):
     """

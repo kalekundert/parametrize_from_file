@@ -495,6 +495,8 @@ class ExpectError:
         pass
 
     def __exit__(self, exc_type, exc_value, exc_tb):
+        __tracebackhide__ = True
+
         ns = self.namespace
         type = self.namespace.eval(self.type_str)
         if isinstance(type, list):
@@ -504,7 +506,7 @@ class ExpectError:
 
         del exc_type, exc_tb
         for i in range(ns.eval(self.cause_str or '0')):
-            assert exc_value.__cause__ is not None, f"{exc_value} has no direct cause"
+            assert exc_value.__cause__ is not None, f"{exc_value.__class__.__name__} has no direct cause"
             exc_value = exc_value.__cause__
 
         if not isinstance(exc_value, type):

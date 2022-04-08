@@ -73,7 +73,7 @@ class Namespace(Mapping):
             >>> with_math.eval('sqrt(4)')
             2.0
 
-        Once you have an initialized a namespace, you can use it to...
+        Once you have an initialized namespace, you can use it to...
 
         ...evaluate expressions:
 

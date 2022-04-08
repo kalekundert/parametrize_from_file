@@ -45,8 +45,8 @@ Note that the test function uses degrees as the default unit, while the
 function itself uses radians.  This is both a good thing and a bad thing.  It's 
 good that our tests will be robust against changes to the default unit.  But 
 it's bad that we're not actually testing the default unit.  If we would like to 
-test this default, we can either write another test specifically for that or 
-use the dict/list approach described in the next section.
+test this default, we can either (i) write another test specifically for that 
+or (ii) use the dict/list approach described in the next section.
 
 Dict/list approach
 ==================

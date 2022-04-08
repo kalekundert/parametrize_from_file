@@ -23,7 +23,7 @@ Install |PFF| using ``pip``:
   $ pip install parametrize_from_file
 
 - Requires python≥3.6
-- Follows `semantic versioning`_.
+- Version numbers obey `semantic versioning`_.
 
 Writing the parameters
 ======================

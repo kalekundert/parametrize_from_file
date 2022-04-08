@@ -2,8 +2,8 @@
 Tutorials
 *********
 
-Below are some tutorials showing how to cleanly handle the more complicated 
-circumstances that come up in real tests:
+Below are some tutorials showing how to cleanly handle some common tasks that 
+come up when in real tests:
 
 .. toctree::
 

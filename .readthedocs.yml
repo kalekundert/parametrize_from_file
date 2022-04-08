@@ -7,7 +7,7 @@ version: 2
 # How to install the project.  We need to specify to use `pip`, because 
 # otherwise RTD may try to directly execute `setup.py`, which doesn't exist.
 python:
-  version: 3.6
+  version: 3.7
   install:
     - method: pip
       path: .

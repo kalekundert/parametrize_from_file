@@ -190,7 +190,7 @@ def parametrize(param_names, param_values, kwargs):
       them by appending a numeric id that counts up from 0.
     
     :param str,list marks:
-      One or more :doc:`marks <mark>` (like `skip <pytest.mark.skip>` or `xfail 
+      One or more :doc:`marks <how-to/mark>` (like `skip <pytest.mark.skip>` or `xfail 
       <pytest.mark.xfail>`) that should be applied this particular set of 
       parameters.  If a plain string is given, it will be split on commas.  If 
       a list is given, each element should be a string.  Pytest will issue a 
@@ -255,7 +255,7 @@ def fixture(param_names, param_values, kwargs):
         kwargs:
             See :deco:`parametrize`.
 
-    :doc:`Fixtures <fixture>` allow multiple test functions to be initialized 
+    :doc:`Fixtures <reference/fixtures>` allow multiple test functions to be initialized 
     in the same way.  Fixtures can be parametrized, in which case the fixture 
     will be reinitialized (and any dependent test functions rerun) for each 
     parameter.  

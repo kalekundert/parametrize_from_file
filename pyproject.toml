@@ -30,6 +30,7 @@ classifiers = [
 test = [
   'pytest',
   'pytest-cov',
+  'pytest_tmp_files',
   'coveralls',
   'numpy',
 ]

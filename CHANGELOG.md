@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.13.1 (2022-04-08)
+### Fix
+* Improve error messages ([`c1eaa78`](https://github.com/kalekundert/parametrize_from_file/commit/c1eaa78d7307ef09f97c069f621ff81ed428f847))
+
+### Documentation
+* Add a tutorial on temporary files ([`09aa784`](https://github.com/kalekundert/parametrize_from_file/commit/09aa78405334f5ea7b44be121462ac0e50f37d26))
+* Fix pytest cross-references ([`33580bb`](https://github.com/kalekundert/parametrize_from_file/commit/33580bbb8982073f90007f4cd0f47528c7df6ea0))
+* Tweak wording ([`f791460`](https://github.com/kalekundert/parametrize_from_file/commit/f7914601cba64e256efdc5b1c73f5bbd53933fff))
+
 ## v0.13.0 (2022-01-17)
 ### Feature
 * Allow assertions on the direct causes of exceptions ([`d4d2be9`](https://github.com/kalekundert/parametrize_from_file/commit/d4d2be928b25048e3a4fac4edb6b5a54c0958be5))

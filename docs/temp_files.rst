@@ -1,5 +1,5 @@
 ***************
-Temporary Files
+Temporary files
 ***************
 
 .. note::

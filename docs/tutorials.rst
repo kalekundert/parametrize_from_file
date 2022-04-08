@@ -10,3 +10,4 @@ come up when in real tests:
     python_snippets
     optional_params
     exceptions
+    temp_files

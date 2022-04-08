@@ -1,0 +1,37 @@
+test_load:
+  -
+    id: empty-file
+    tmp_files:
+      vectors.txt:
+    expected:
+      []
+  -
+    id: one-vector
+    tmp_files:
+      vectors.txt:
+        > 1 2
+    expected:
+      - Vector(1, 2)
+  -
+    id: two-vectors
+    tmp_files:
+      vectors.txt:
+        > 1 2
+        > 3 4
+    expected:
+      - Vector(1, 2)
+      - Vector(3, 4)
+  -
+    id: err-too-many-coords
+    tmp_files:
+      vectors.txt:
+        > 1 2 3
+    error:
+      type: IndexError
+      message: line 1: expected 2 coordinates, got 3
+  -
+    id: err-not-float
+    tmp_files:
+      vectors.txt:
+        > hello world
+    error: ValueError

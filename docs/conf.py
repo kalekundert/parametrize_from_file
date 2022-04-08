@@ -50,6 +50,7 @@ extensions = [
 intersphinx_mapping = { #
         'python': ('https://docs.python.org/3', None),
         'pytest': ('https://docs.pytest.org/en/stable', None),
+        'tmp_files': ('https://pytest-tmp-files.readthedocs.io/en/latest', None),
         'pandas': ('https://pandas.pydata.org/pandas-docs/stable', None),
 }
 autosummary_generate = True
@@ -72,3 +73,11 @@ def ignore_dict_return_annotations(app, what, name, obj, options, signature, ret
 
 def setup(app):
     app.connect('autodoc-process-signature', ignore_dict_return_annotations)
+
+    # To allow cross-referencing to :std:fixture:`tmp_path` in pytest.
+    app.add_crossref_type(
+            "fixture",
+            "fixture",
+            objname="built-in fixture",
+            indextemplate="pair: %s; fixture",
+    )

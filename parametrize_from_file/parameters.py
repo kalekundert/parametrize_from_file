@@ -105,16 +105,20 @@ def parametrize(param_names, param_values, kwargs):
             and/or prune test cases.  The function should have the following 
             signature::
 
-                def preprocess(params: Any) -> List[Dict[str, Any]]
+                def preprocess(params: Any, [context: Context]) -> List[Dict[str, Any]]
 
-            The argument will be the value associated with the given key in the 
-            parameter file.  Typically this value is a list, but it could be 
-            anything.  If multiple parameter files and/or keys are specified, 
-            this function is called separately on each one.  The return value 
-            must be a list of dicts.  Each of these dicts will be further 
-            processed by the *schema* argument before being used to parametrize 
-            the test function.  Note that this function does get access to the 
-            special *id* and *marks* fields, unlike the *schema* function.
+            The first argument will be the value associated with the given key 
+            in the parameter file.  Typically this value is a list, but it 
+            could be anything.  If the function accepts a second argument 
+            (which it doesn't have to), it will be an object with *path* and 
+            *key* attributes specifying where the aforementioned value was 
+            loaded from.  If multiple parameter files and/or keys are 
+            specified, this function will be called separately on each one.  
+            The return value must be a list of dicts.  Each of these dicts will 
+            be further processed by the *schema* argument before being used to 
+            parametrize the test function.  Note that this function does get 
+            access to the special *id* and *marks* fields, unlike the *schema* 
+            function.
 
         schema (collections.abc.Callable):
             A function that will be used to validate and/or transform each set 
@@ -327,12 +331,13 @@ def load_parameters(
                     param_path=path_i,
             ):
                 p = _load_test_params(path_i, key_i)
+                context = Context(path_i, key_i)
 
                 with ConfigError.add_info(
                         "top-level key: {key}",
                         key=key_i,
                 ):
-                    p = _process_test_params(p, preprocess, schema)
+                    p = _process_test_params(p, preprocess, context, schema)
                     test_params += p
 
     except UnequalIterablesError:
@@ -444,9 +449,13 @@ def _load_test_params(param_path, test_name):
         err.hints += "make sure the top-level data structure in the parameter file is a dictionary where the keys are the names of test functions, and the values are dictionaries of test parameters."
         raise err from None
 
-def _process_test_params(test_params_in, preprocess, schema):
+def _process_test_params(test_params_in, preprocess, context, schema):
     if preprocess:
-        test_params_in = preprocess(test_params_in)
+        sig = inspect.signature(preprocess)
+        if len(sig.parameters) > 1:
+            test_params_in = preprocess(test_params_in, context)
+        else:
+            test_params_in = preprocess(test_params_in)
 
     if not isinstance(test_params_in, list):
         raise ConfigError(
@@ -584,3 +593,8 @@ def _format_case_params(case_params):
     except:
         return repr(case_params)
 
+class Context:
+
+    def __init__(self, path, key):
+        self.path = path
+        self.key = key

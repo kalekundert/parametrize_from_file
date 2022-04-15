@@ -242,30 +242,44 @@ def test_load_test_params_err(suite_params, test_name, message, tmp_path):
         pffp._load_test_params(p, test_name)
 
 @pytest.mark.parametrize(
-        'test_params, preprocess, schema, expected', [(
+        'test_params, preprocess, context, schema, expected', [(
             # preprocess:
             [{'a': 1}],
-            lambda x: x + [{'a': 2}],
+            lambda xs: xs + [{'a': 2}],
+            None,
             None,
             [{'a': 1}, {'a': 2}],
         ), (
+            [{'a': 1}],
+            lambda xs, ctx: [
+                {'path': ctx.path, 'key': ctx.key, **x}
+                for x in xs
+            ],
+            pffp.Context('x', 'y'),
+            None,
+            [{'path': 'x', 'key': 'y', 'a': 1}],
+        ), (
             # schema:
             [],
+            None,
             None,
             Schema({'a': int}),
             [],
         ), (
             [{'a': 1}],
+            None,
             None,
             Schema({'a': int}),
             [{'a': 1}],
         ), (
             [{'a': '1'}],
             None,
+            None,
             Schema({'a': eval}),
             [{'a': 1}],
         ), (
             [{'a': 1}],
+            None,
             None,
             Schema({str: int}),
             [{'a': 1}],
@@ -273,15 +287,18 @@ def test_load_test_params_err(suite_params, test_name, message, tmp_path):
             # schema + id
             [{'a': 1, 'id': 'x'}],
             None,
+            None,
             Schema({str: int}),
             [{'a': 1, 'id': 'x'}],
         ), (
             [{'a': 1}],
             None,
+            None,
             lambda x: {**x, 'id': 'x'},
             [{'a': 1, 'id': 'x'}],
         ), (
             [{'a': 1, 'id': 'x'}],
+            None,
             None,
             lambda x: {**x, 'id': 'y'},
             [{'a': 1, 'id': 'x'}],
@@ -289,59 +306,69 @@ def test_load_test_params_err(suite_params, test_name, message, tmp_path):
             # schema + marks
             [{'a': 1, 'marks': 'skip'}],
             None,
+            None,
             Schema({str: int}),
             [{'a': 1, 'marks': 'skip'}],
         ), (
             [{'a': 1}],
+            None,
             None,
             lambda x: {**x, 'marks': 'skip'},
             [{'a': 1, 'marks': 'skip'}],
         ), (
             [{'a': 1, 'marks': 'skip'}],
             None,
+            None,
             lambda x: {**x, 'marks': []},
             [{'a': 1, 'marks': 'skip'}],
         )
 ])
-def test_process_test_params(test_params, preprocess, schema, expected):
-    actual = pffp._process_test_params(test_params, preprocess, schema)
+def test_process_test_params(test_params, preprocess, context, schema, expected):
+    actual = pffp._process_test_params(test_params, preprocess, context, schema)
     assert actual == expected
 
 @pytest.mark.parametrize(
-        'test_params, preprocess, schema, messages', [(
+        'test_params, preprocess, context, schema, messages', [(
             # preprocess
             [{'a': 1}],
             lambda _: 'a',
+            None,
             None,
             ["expected preprocess to return list of dicts, got 'a'"],
         ), (
             [{'a': 1}],
             lambda _: ['a'],
             None,
+            None,
             ["expected dict, got 'a'"],
         ), (
             # schema
             'a',
+            None,
             None,
             Schema({'a': int}),
             ["expected list of dicts, got 'a'"],
         ), (
             ['a'],
             None,
+            None,
             Schema({'a': int}),
             ["expected dict, got 'a'"],
         ), (
             [{'a': 'b'}],
+            None,
             None,
             Schema({'a': int}),
             ["test case failed schema validation"],
         ), (
             [{'a': 1}],
             None,
+            None,
             Schema({'b': int}),
             ["test case failed schema validation"],
         ), (
             [{'a': 1, 'b': 'c'}],
+            None,
             None,
             Schema({str: int}),
             ["test case failed schema validation"],
@@ -350,18 +377,20 @@ def test_process_test_params(test_params, preprocess, schema, expected):
             # by tidyexc.
             [{'a': 1, 'b': 2}],
             None,
+            None,
             value_error_with_braces,
             ["test case failed schema validation", r"\{hello world\}"],
         ), (
             [{}],
             None,
+            None,
             lambda _: 'a',
             ["expected schema to return dict, got 'a'"],
         )
 ])
-def test_process_test_params_err(test_params, preprocess, schema, messages):
+def test_process_test_params_err(test_params, preprocess, context, schema, messages):
     with pytest.raises(pff.ConfigError) as err:
-        pffp._process_test_params(test_params, preprocess, schema)
+        pffp._process_test_params(test_params, preprocess, context, schema)
 
     for msg in messages:
         assert err.match(msg)

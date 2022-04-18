@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.14.0 (2022-04-18)
+### Feature
+* Allow loaders to be overridden locally ([`466fa31`](https://github.com/kalekundert/parametrize_from_file/commit/466fa31075427da63cb2f16529dbebde6c285d18))
+* Allow preprocess() to get additional contextual information ([`a482725`](https://github.com/kalekundert/parametrize_from_file/commit/a4827256b1157a464c7c543a528cc3a826e5494a))
+
+### Documentation
+* Use sentence-case for page titles ([`0f30c42`](https://github.com/kalekundert/parametrize_from_file/commit/0f30c421da9b6915864070c3b2cf6970e88cadf4))
+* Use python 3.7 to build the docs ([`6bd272c`](https://github.com/kalekundert/parametrize_from_file/commit/6bd272cf5afd2eafa014581b730db369afc65983))
+
 ## v0.13.1 (2022-04-08)
 ### Fix
 * Improve error messages ([`c1eaa78`](https://github.com/kalekundert/parametrize_from_file/commit/c1eaa78d7307ef09f97c069f621ff81ed428f847))

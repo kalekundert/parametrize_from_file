@@ -35,6 +35,7 @@ def _decorator_factory(api_func):
             path=None,
             key=None,
             *,
+            loaders=None,
             preprocess=None,
             schema=None,
             test_func=decopatch.DECORATED,
@@ -52,9 +53,11 @@ def _decorator_factory(api_func):
                 test_module=test_module,
                 test_path=test_path,
         ):
+            loaders = _override_global_loaders(loaders)
             param_names, param_values = load_parameters(
-                    _resolve_param_path(test_path, path),
+                    _resolve_param_path(test_path, path, loaders),
                     key or test_func.__name__,
+                    loaders=loaders,
                     preprocess=preprocess,
                     schema=schema,
             )
@@ -98,6 +101,13 @@ def parametrize(param_names, param_values, kwargs):
             a single path (meaning: lookup all keys in the same file) or a list 
             of paths with the same length as this argument (meaning: look up 
             each key in the corresponding file).
+
+        loaders (dict):
+            A dictionary mapping file extensions (e.g. `'.nt'`) to functions 
+            that load test parameters from files (e.g. `nt.load`).  See 
+            `add_loader` for a more complete description of these functions.  
+            The items in this dictionary override the globally defined loaders 
+            for the purposes of the decorated test function.
 
         preprocess (collections.abc.Callable):
             A function that will be allowed to modify the list of test cases 
@@ -288,6 +298,7 @@ def load_parameters(
         path,
         key,
         *,
+        loaders=None,
         preprocess=None,
         schema=None,
     ):
@@ -302,6 +313,9 @@ def load_parameters(
             current working directory.
 
         key (str, list):
+            See: :deco:`parametrize`
+
+        loaders (dict):
             See: :deco:`parametrize`
 
         preprocess (collections.abc.Callable):
@@ -323,6 +337,7 @@ def load_parameters(
     apply them all to the same test function.
     """
     test_params = []
+    loaders = _override_global_loaders(loaders)
 
     try:
         for path_i, key_i in zip_broadcast(path, key, strict=True):
@@ -330,7 +345,7 @@ def load_parameters(
                     "parameter file: {param_path}",
                     param_path=path_i,
             ):
-                p = _load_test_params(path_i, key_i)
+                p = _load_test_params(loaders, path_i, key_i)
                 context = Context(path_i, key_i)
 
                 with ConfigError.add_info(
@@ -353,7 +368,13 @@ def load_parameters(
     return _init_parametrize_args(test_params)
 
 
-def _resolve_param_path(test_path, rel_path):
+def _override_global_loaders(loaders):
+    if loaders is None:
+        return get_loaders()
+    else:
+        return {**get_loaders(), **loaders}
+
+def _resolve_param_path(test_path, rel_path, loaders):
     if rel_path:
         if is_iterable(rel_path):
             return [test_path.parent / p for p in rel_path]
@@ -362,7 +383,7 @@ def _resolve_param_path(test_path, rel_path):
 
     param_path_candidates = [
             test_path.with_suffix(x)
-            for x in get_loaders()
+            for x in loaders
     ]
     param_paths = [
             x for x in param_path_candidates if x.exists()
@@ -394,20 +415,24 @@ def _resolve_param_path(test_path, rel_path):
 
     return param_paths[0]
 
-@lru_cache()
-def _load_and_cache_suite_params(param_path):
-    if not param_path.exists():
-        err = ConfigError(
-                param_path=param_path,
-        )
-        err.brief = "can't find parametrization file"
-        err.blame += "'{param_path}' does not exist."
-        raise err
-
-    loaders = get_loaders()
+def _load_test_params(loaders, param_path, test_name):
+    loader = _pick_loader_by_suffix(loaders, param_path)
+    suite_params = _load_and_cache_suite_params(loader, param_path)
 
     try:
-        loader = loaders[param_path.suffix]
+        return suite_params[test_name]
+
+    except KeyError:
+        err = ConfigError(
+                test_name=test_name,
+        )
+        err.brief += "must specify parameters for '{test_name}'"
+        err.hints += "make sure the top-level data structure in the parameter file is a dictionary where the keys are the names of test functions, and the values are dictionaries of test parameters."
+        raise err from None
+
+def _pick_loader_by_suffix(loaders, param_path):
+    try:
+        return loaders[param_path.suffix]
 
     except KeyError:
         err = ConfigError(
@@ -422,6 +447,16 @@ def _load_and_cache_suite_params(param_path):
         err.blame += "the given extension is not recognized: {param_path.suffix}"
         raise err from None
 
+@lru_cache()
+def _load_and_cache_suite_params(loader, param_path):
+    if not param_path.exists():
+        err = ConfigError(
+                param_path=param_path,
+        )
+        err.brief = "can't find parametrization file"
+        err.blame += "'{param_path}' does not exist."
+        raise err
+
     try:
         return loader(param_path)
 
@@ -434,20 +469,6 @@ def _load_and_cache_suite_params(param_path):
         err2.info += "attempted to load file with: {load_func.__module__}.{load_func.__qualname__}()"
         err2.blame += "{err}"
         raise err2 from None
-
-def _load_test_params(param_path, test_name):
-    suite_params = _load_and_cache_suite_params(param_path)
-
-    try:
-        return suite_params[test_name]
-
-    except KeyError:
-        err = ConfigError(
-                test_name=test_name,
-        )
-        err.brief += "must specify parameters for '{test_name}'"
-        err.hints += "make sure the top-level data structure in the parameter file is a dictionary where the keys are the names of test functions, and the values are dictionaries of test parameters."
-        raise err from None
 
 def _process_test_params(test_params_in, preprocess, context, schema):
     if preprocess:

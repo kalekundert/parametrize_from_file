@@ -9,10 +9,43 @@ from pathlib import Path
 
 pytest_plugins = ['pytester']
 TEST_DIR = Path(__file__).parent
+SENTINEL = object()
 
 def value_error_with_braces(x):
     raise ValueError('{hello world}')
 
+
+@pytest.mark.parametrize(
+        'loaders, expected', [
+            # The order of the loaders/suffixes is significant to this test, 
+            # since it affects how error messages are formatted.
+            (
+                None,
+                pffp.get_loaders(),
+            ), (
+                {'.nt': SENTINEL},
+                {
+                    '.json': pffp.get_loaders()['.json'],
+                    '.yaml': pffp.get_loaders()['.yaml'],
+                    '.yml': pffp.get_loaders()['.yml'],
+                    '.toml': pffp.get_loaders()['.toml'],
+                    '.nt': SENTINEL,
+                },
+            ), (
+                {'.xyz': SENTINEL},
+                {
+                    '.json': pffp.get_loaders()['.json'],
+                    '.yaml': pffp.get_loaders()['.yaml'],
+                    '.yml': pffp.get_loaders()['.yml'],
+                    '.toml': pffp.get_loaders()['.toml'],
+                    '.nt': pffp.get_loaders()['.nt'],
+                    '.xyz': SENTINEL,
+                },
+            ),
+        ],
+)
+def test_override_global_loaders(loaders, expected):
+    assert pffp._override_global_loaders(loaders) == expected
 
 @pytest.mark.parametrize(
         'paths, test_path, rel_path, expected', [(
@@ -56,7 +89,9 @@ def test_resolve_param_path(paths, test_path, rel_path, expected, tmp_path):
     for p in paths:
         (tmp_path / p).touch()
 
-    param_path = pffp._resolve_param_path(tmp_path / test_path, rel_path)
+    param_path = pffp._resolve_param_path(
+            tmp_path / test_path, rel_path, pffp.get_loaders())
+
     assert param_path == expected(tmp_path)
 
 @pytest.mark.parametrize(
@@ -89,130 +124,11 @@ def test_resolve_param_path_err(paths, test_path, rel_path, messages, tmp_path):
         (tmp_path / p).touch()
 
     with pytest.raises(pff.ConfigError) as err:
-        pffp._resolve_param_path(tmp_path / test_path, rel_path)
+        pffp._resolve_param_path(
+                tmp_path / test_path, rel_path, pffp.get_loaders())
 
     for msg in messages:
         assert err.match(msg)
-
-@pytest.mark.parametrize(
-        'path, contents, expected', [
-            ('ok.json', '{"a": "b"}', {'a': 'b'}),
-            ('ok.yml', 'a: b', {'a': 'b'}),
-            ('ok.yaml', 'a: b', {'a': 'b'}),
-            ('ok.toml', 'a = "b"', {'a': 'b'}),
-            ('ok.nt', 'a: b', {'a': 'b'}),
-        ],
-)
-def test_load_suite_params(path, contents, expected, tmp_path):
-    p = tmp_path / path
-    p.write_text(contents)
-
-    suite_params = pffp._load_and_cache_suite_params(p)
-    assert suite_params == expected
-
-@pytest.mark.parametrize(
-        'files, path, messages', [(
-            {},
-            'does-not-exist.json',
-            [
-                "can't find parametrization file",
-                "does-not-exist.json",
-            ],
-        ), (
-            {'wrong-ext.xyz': ''},
-            'wrong-ext.xyz',
-            [
-                "parametrization file must have a recognized extension",
-                "the given extension is not recognized: .xyz",
-            ],
-        ), (
-            {'err.json': '{"a":'},
-            'err.json',
-            [
-                "failed to load parametrization file",
-                "attempted to load file with: json.load()",
-                "Expecting value",
-            ],
-        ), (
-            {'err.yml': ':'},
-            'err.yml',
-            [
-                "failed to load parametrization file",
-                "attempted to load file with: yaml.safe_load()",
-                "expected <block end>, but found ':'",
-            ],
-        ), (
-            {'err.yaml': ':'},
-            'err.yaml',
-            [
-                "failed to load parametrization file",
-                "attempted to load file with: yaml.safe_load()",
-                "expected <block end>, but found ':'",
-            ],
-        ), (
-            {'err.toml': 'a ='},
-            'err.toml',
-            [
-                "failed to load parametrization file",
-                "attempted to load file with: toml.decoder.load()",
-                "Empty value is invalid",
-            ],
-        ), (
-            {'err.nt': 'a ='},
-            'err.nt',
-            [
-                "failed to load parametrization file",
-                "attempted to load file with: nestedtext.load()",
-            ],
-        ),
-    ]
-)
-def test_load_suite_params_err(files, path, messages, tmp_path):
-    for p, content in files.items():
-        (tmp_path / p).write_text(content)
-        
-    with pytest.raises(pff.ConfigError) as err:
-        pffp._load_and_cache_suite_params(tmp_path / path)
-
-    for msg in messages:
-        assert err.match(msg)
-
-def test_load_suite_params_err_brace(tmp_path):
-    # The braces in this error message must not be evaluated by tidyexc.
-    pff.add_loader('.xyz', value_error_with_braces)
-
-    p = tmp_path / 'dummy.xyz'
-    p.touch()
-
-    try:
-        with pytest.raises(pff.ConfigError) as err:
-            pffp._load_and_cache_suite_params(p)
-
-        assert err.match("failed to load parametrization file")
-        assert err.match("attempted to load file with: .*value_error_with_braces")
-        assert err.match(r"\{hello world\}")
-
-    finally:
-        pff.drop_loader('.xyz')
-
-
-def test_cache_suite_params(tmp_path):
-    m = Mock()
-    p = tmp_path / 'dummy.xyz'
-    p.touch()
-    pff.add_loader('.xyz', m)
-
-    try:
-        assert m.call_count == 0
-
-        pffp._load_and_cache_suite_params(p)
-        assert m.call_count == 1
-
-        pffp._load_and_cache_suite_params(p)
-        assert m.call_count == 1
-
-    finally:
-        pff.drop_loader('.xyz')
 
 @pytest.mark.parametrize(
         'suite_params, test_name, expected', [(
@@ -221,10 +137,10 @@ def test_cache_suite_params(tmp_path):
 ])
 def test_load_test_params(suite_params, test_name, expected, tmp_path):
     import json
-    p = tmp_path / 'ok.yml'
+    p = tmp_path / 'ok.json'
     p.write_text(json.dumps(suite_params))
 
-    test_params = pffp._load_test_params(p, test_name)
+    test_params = pffp._load_test_params(pffp.get_loaders(), p, test_name)
     assert test_params == expected
 
 @pytest.mark.parametrize(
@@ -235,11 +151,171 @@ def test_load_test_params(suite_params, test_name, expected, tmp_path):
 ])
 def test_load_test_params_err(suite_params, test_name, message, tmp_path):
     import json
-    p = tmp_path / 'err.yml'
+    p = tmp_path / 'err.json'
     p.write_text(json.dumps(suite_params))
 
     with pytest.raises(pff.ConfigError, match=message):
-        pffp._load_test_params(p, test_name)
+        pffp._load_test_params(pffp.get_loaders(), p, test_name)
+
+def test_pick_loader_by_suffix():
+    f = Mock()
+    assert pffp._pick_loader_by_suffix({'.xyz': f}, Path('test.xyz')) is f
+
+def test_pick_loader_by_suffix_err():
+    with pytest.raises(pff.ConfigError) as err:
+        pffp._pick_loader_by_suffix({'.abc': None}, Path('wrong-ext.xyz'))
+
+    assert err.match("parametrization file must have a recognized extension")
+    assert err.match("the following extensions are recognized")
+    assert err.match(r"\.abc")
+    assert err.match(r"the given extension is not recognized: \.xyz")
+
+@pytest.mark.parametrize(
+        'loader, path, contents, expected', [
+            # Make sure all the builtin loaders work.  This doesn't really test 
+            # any logic from `_load_and_cache_suite_params()`, but whatever.
+            (pffp.get_loaders()['.json'], 'ok.json', '{"a": "b"}', {'a': 'b'}),
+            (pffp.get_loaders()['.yml'], 'ok.yml', 'a: b', {'a': 'b'}),
+            (pffp.get_loaders()['.yaml'], 'ok.yaml', 'a: b', {'a': 'b'}),
+            (pffp.get_loaders()['.toml'], 'ok.toml', 'a = "b"', {'a': 'b'}),
+            (pffp.get_loaders()['.nt'], 'ok.nt', 'a: b', {'a': 'b'}),
+        ],
+)
+def test_load_suite_params(loader, path, contents, expected, tmp_path):
+    p = tmp_path / path
+    p.write_text(contents)
+
+    suite_params = pffp._load_and_cache_suite_params(loader, p)
+    assert suite_params == expected
+
+@pytest.mark.parametrize(
+        'loader, path, files, messages', [(
+            lambda p: None,
+            'does-not-exist.json',
+            {},
+            [
+                "can't find parametrization file",
+                "does-not-exist.json",
+            ],
+        ), (
+            # Check examples of real files that the built-in loaders will fail 
+            # to parse, to make sure that the error messages are still good.
+            pffp.get_loaders()['.json'],
+            'err.json',
+            {'err.json': '{"a":'},
+            [
+                "failed to load parametrization file",
+                r"attempted to load file with: json.load\(\)",
+                "Expecting value",
+            ],
+        ), (
+            pffp.get_loaders()['.yml'],
+            'err.yml',
+            {'err.yml': ':'},
+            [
+                "failed to load parametrization file",
+                r"attempted to load file with: yaml.safe_load\(\)",
+                "expected <block end>, but found ':'",
+            ],
+        ), (
+            pffp.get_loaders()['.yaml'],
+            'err.yaml',
+            {'err.yaml': ':'},
+            [
+                "failed to load parametrization file",
+                r"attempted to load file with: yaml.safe_load\(\)",
+                "expected <block end>, but found ':'",
+            ],
+        ), (
+            pffp.get_loaders()['.toml'],
+            'err.toml',
+            {'err.toml': 'a ='},
+            [
+                "failed to load parametrization file",
+                r"attempted to load file with: toml.decoder.load\(\)",
+                "Empty value is invalid",
+            ],
+        ), (
+            pffp.get_loaders()['.nt'],
+            'err.nt',
+            {'err.nt': 'a ='},
+            [
+                "failed to load parametrization file",
+                r"attempted to load file with: nestedtext.load\(\)",
+            ],
+        ), (
+            # Any braces in error messages must not be evaluated by tidyexc.
+            value_error_with_braces,
+            'braces.xyz',
+            {'braces.xyz': ''},
+            [
+                "failed to load parametrization file",
+                "attempted to load file with: .*value_error_with_braces",
+                r"\{hello world\}",
+            ],
+        ),
+    ]
+)
+def test_load_suite_params_err(loader, path, files, messages, tmp_path):
+    for p, contents in files.items():
+        (tmp_path / p).write_text(contents)
+        
+    with pytest.raises(pff.ConfigError) as err:
+        pffp._load_and_cache_suite_params(loader, tmp_path / path)
+
+    for msg in messages:
+        assert err.match(msg)
+
+def test_cache_suite_params(tmp_path):
+    m1 = Mock()
+    m2 = Mock()
+
+    p1 = tmp_path / 'p1.xyz'
+    p2 = tmp_path / 'p2.xyz'
+
+    p1.touch()
+    p2.touch()
+
+    pffp._load_and_cache_suite_params.cache_clear()
+
+    assert m1.call_count == 0
+    assert m2.call_count == 0
+
+
+    pffp._load_and_cache_suite_params(m1, p1)
+    assert m1.call_count == 1
+    assert m2.call_count == 0
+
+    pffp._load_and_cache_suite_params(m1, p1)
+    assert m1.call_count == 1
+    assert m2.call_count == 0
+
+
+    pffp._load_and_cache_suite_params(m1, p2)
+    assert m1.call_count == 2
+    assert m2.call_count == 0
+
+    pffp._load_and_cache_suite_params(m1, p2)
+    assert m1.call_count == 2
+    assert m2.call_count == 0
+
+
+    pffp._load_and_cache_suite_params(m2, p1)
+    assert m1.call_count == 2
+    assert m2.call_count == 1
+
+    pffp._load_and_cache_suite_params(m2, p1)
+    assert m1.call_count == 2
+    assert m2.call_count == 1
+
+
+    pffp._load_and_cache_suite_params(m2, p2)
+    assert m1.call_count == 2
+    assert m2.call_count == 2
+
+    pffp._load_and_cache_suite_params(m2, p2)
+    assert m1.call_count == 2
+    assert m2.call_count == 2
 
 @pytest.mark.parametrize(
         'test_params, preprocess, context, schema, expected', [(
@@ -561,6 +637,26 @@ def test_parametrize_key(testdir):
             import parametrize_from_file
 
             @parametrize_from_file(key='test_eq_alt')
+            def test_eq(a, b):
+                assert a == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=1)
+
+def test_parametrize_loaders(testdir):
+    testdir.makefile('.xyz', test_file="""\
+            test_eq:
+              -
+                a: x
+                b: x
+    """)
+    testdir.makefile('.py', test_file="""\
+            import parametrize_from_file
+            import nestedtext as nt
+
+            @parametrize_from_file(
+                loaders={'.xyz': nt.load},
+            )
             def test_eq(a, b):
                 assert a == b
     """)

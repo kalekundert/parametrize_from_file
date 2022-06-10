@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.15.0 (2022-06-10)
+### Feature
+* Provide schema functions tailored for testing ([`275c79d`](https://github.com/kalekundert/parametrize_from_file/commit/275c79d3cfea5951aff624b0a8300fc65d875936))
+
 ## v0.14.0 (2022-04-18)
 ### Feature
 * Allow loaders to be overridden locally ([`466fa31`](https://github.com/kalekundert/parametrize_from_file/commit/466fa31075427da63cb2f16529dbebde6c285d18))

@@ -11,15 +11,15 @@ In order to test functions that interact with the file system, it is often
 necessary to construct a handful of files or directories for each test.  Such 
 tests typically use the :std:fixture:`tmp_path` fixture provided by pytest to 
 create a unique temporary directory for each test.  However, that directory 
-still needs to be filled in with the files relevant to the test.  For that, 
-*Parametrize From File* (in conjunction with the |tmp_files| plugin) is a 
-powerful tool.
+still needs to be filled in with the files relevant to the test.  *Parametrize 
+From File* (in conjunction with the |tmp_files| plugin) is really good at 
+specifying how to do this.
 
 To give an example, let's return to the ``Vector`` class from the 
 `getting_started` tutorial and add a function to parse a list ``Vector`` 
-objects from a text file.  The format is straight-forward: each line should 
-have exactly two space-separated numbers which will be interpreted as the x- 
-and y-coordinates of a vector:
+objects from a text file.  The format is as follows: each line should have 
+exactly two space-separated numbers which will be interpreted as the x- and 
+y-coordinates of a vector:
 
 .. literalinclude:: temp_files/vector.py
    :caption: vector.py
@@ -33,7 +33,12 @@ parameter.
 .. literalinclude:: temp_files/test_vector.nt
    :caption: test_vector.nt
 
-There are a few things to note about the test function itself:
+Below is the test function:
+
+.. literalinclude:: temp_files/test_vector.py
+   :caption: test_vector.py
+
+There are a few things to note about this test function:
 
 - The ``indirect=['tmp_files']`` argument is critical.  This is how the 
   |tmp_files| fixture knows to create the files specified by the *tmp_files* 
@@ -53,8 +58,5 @@ There are a few things to note about the test function itself:
 - This test also checks that the appropriate exceptions are raised for 
   malformed files.  This isn't directly relevant to the task of using temporary 
   files in tests, but it's an important part of testing a parser.
-
-.. literalinclude:: temp_files/test_vector.py
-   :caption: test_vector.py
 
 .. |tmp_files| replace:: `tmp_files <pytest_tmp_files.tmp_files>`

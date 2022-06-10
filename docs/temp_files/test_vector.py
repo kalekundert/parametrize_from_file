@@ -1,19 +1,15 @@
 import vector
 import parametrize_from_file
-
-from voluptuous import Schema
-from parametrize_from_file.voluptuous import Namespace
+from parametrize_from_file import Namespace, cast, error_or
 
 with_py = Namespace()
 with_vec = Namespace('from vector import *')
 
 @parametrize_from_file(
-        schema=Schema({
-            'tmp_files': {str: str},
-            **with_py.error_or({
-                'expected': with_vec.eval,
-            }),
-        }),
+        schema=[
+            cast(expected=with_vec.eval),
+            error_or('expected'),
+        ],
         indirect=['tmp_files'],
 )
 def test_load(tmp_files, expected, error):

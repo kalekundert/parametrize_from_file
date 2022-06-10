@@ -2,18 +2,22 @@ import math
 import vector
 import parametrize_from_file
 from pytest import approx
-from voluptuous import Schema, Optional
-from parametrize_from_file.voluptuous import Namespace
+from parametrize_from_file import Namespace, cast, defaults
 
 with_math = Namespace('from math import *')
 with_vec = with_math.fork('from vector import *')
 
 @parametrize_from_file(
-        schema=Schema({
-            'angle': with_math.eval,
-            Optional('kwargs', default={}): with_math.eval,
-            'expected': with_vec.eval,
-        }),
+        schema=[
+            cast(
+                angle=with_math.eval,
+                kwargs=with_math.eval,
+                expected=with_vec.eval,
+            ),
+            defaults(
+                kwargs={},
+            ),
+        ],
 )
 def test_from_angle(angle, kwargs, expected):
     actual = vector.from_angle(angle, **kwargs)

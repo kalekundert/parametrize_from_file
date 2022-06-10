@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-import pytest, re
 from copy import copy
 from collections.abc import Mapping, Iterable
-from contextlib2 import nullcontext
 from functools import partial
 from unittest.mock import Mock
 
@@ -102,9 +100,6 @@ class Namespace(Mapping):
             >>> err_cm = with_err.error({'type': 'MyError', 'pattern': r'\\d+'})
             >>> with err_cm:
             ...    raise MyError('404')
-
-    If you plan to use a namespace as part of a schema, you probably want 
-    `voluptuous.Namespace` instead of this class.
     """
 
     def __init__(self, *args, **kwargs):
@@ -146,6 +141,15 @@ class Namespace(Mapping):
 
     def __len__(self):
         return self._dict.__len__()
+
+    def copy(self):
+        """
+        Create a shallow copy of this namespace.
+
+        This is an alias for `fork()` with no arguments, for compatibility with 
+        the `dict` API.
+        """
+        return self.fork()
 
     def fork(self, *args, **kwargs):
         """
@@ -213,9 +217,9 @@ class Namespace(Mapping):
             but defer that evaluation until within the test::
                 
                 >>> @parametrize_from_file(  # doctest: +SKIP
-                ...         schema={
-                ...             'expected': with_a.eval(defer=True),
-                ...         },
+                ...         schema=cast(
+                ...             expected=with_a.eval(defer=True),
+                ...         ),
                 ... )
                 ... def test_snippet(expected)
                 ...     expected = expected.eval()
@@ -223,9 +227,9 @@ class Namespace(Mapping):
         Details:
             `unittest.mock.Mock` instances are handled specially by this 
             method.  Specifically, they are returned unchanged (i.e. without 
-            being evaluated).  This special case exists because 
-            `voluptuous.Namespace.error_or` uses `unittest.mock.Mock` instances 
-            as placeholders when an exception is expected.
+            being evaluated).  This special case exists because `error_or` uses 
+            `unittest.mock.Mock` instances (by default) as placeholders when an 
+            exception is expected.
         """
         if not src:
             return partial(self.eval, keys=keys, defer=defer)
@@ -244,7 +248,7 @@ class Namespace(Mapping):
         elif isinstance(src, Mock):
             return src
         else:
-            return eval(src, self._dict)
+            return eval(src, self._dict.copy())
 
     def exec(self, src=SENTINEL, get=SENTINEL, defer=False):
         """
@@ -317,10 +321,9 @@ class Namespace(Mapping):
         Details:
             `unittest.mock.Mock` instances are handled specially by this 
             method.  Specifically, they are returned unchanged (i.e. without 
-            being executed).  This special case exists because 
-            `voluptuous.Namespace.error_or` uses
-            `unittest.mock.Mock` instances as placeholders when an exception is 
-            expected.
+            being executed).  This special case exists because `error_or` uses
+            `unittest.mock.Mock` instances (by default) as placeholders when an 
+            exception is expected.
         """
         if src is SENTINEL:
             return partial(self.exec, get=get, defer=defer)
@@ -342,192 +345,28 @@ class Namespace(Mapping):
         else:
             return fork[get]
 
-    def error(self, params):
+    def error(self, exc_spec):
         """\
-        Create a context manager that will check that a particular error is 
-        raised.
+        Make an exception-checking context manager in the context of this 
+        namespace.
 
-        Arguments:
-            params (str, list, dict):
-                This argument specifies what kind of exception to expect (and 
-                optionally how to check various aspects of it).
-
-                If string: A string that evaluates to an exception type.  This 
-                can also be ``"none"`` to specify that the returned context 
-                manager should not expect any exception to be raised.
-
-                If list: A list of the above strings that evaluate to exception 
-                types.  The actual exception must be one of these types.
-
-                If dict: The following keys are understood:
-
-                - "type" (required): A string or list of strings that evaluate 
-                  to exception types.  The context manager will require that 
-                  an exception of one of the given types is raised.
-
-                - "message" (optional): A string or list of strings that should 
-                  appear verbatim in the error message.
-
-                - "pattern" (optional): A string or list of strings 
-                  representing patterns that should appear in the error 
-                  message.  Each string is interpreted as a regular expression, 
-                  in the same manner as the *match* argument to 
-                  `pytest.raises`.
-
-                - "attrs" (optional): A dictionary of attributes that the 
-                  exception object should have.  The dictionary keys give the 
-                  attribute names, and should be strings.  The dictionary 
-                  values give the attribute values, and should also be strings.  
-                  Each value string will be evaluated in the context of this 
-                  namespace to get the expected values.
-
-                - "assertions" (optional): A string containing python code that 
-                  will be executed when the expected exception is detected.  
-                  All names available to this namespace will be available to 
-                  this code.  In addition, the exception object itself will be 
-                  available via the *exc* variable.  This field is typically 
-                  used to make free-form assertions about the exception object.
-
-                - "cause" (optional): A string that should evaluate to an 
-                  integer 'n'.  All other checks will apply to the n-th direct 
-                  cause of the caught exception, instead of the exception 
-                  itself.  This is useful in cases where the exception you want 
-                  to test is wrapped in some other exception.
-
-                Note that everything is expected to be strings, because this 
-                method is meant to help with parsing exception information from 
-                a text file, e.g. in the NestedText_ format.  All evaluations 
-                and executions are deferred for as long as possible.
-
-        Returns:
-            A context manager that can be used to check if the kind of 
-            exception specified by *params* was raised.
-
-        Examples:
-            Using a built-in exception (so no need to specify globals) and not 
-            checking the error message::
-
-                >>> p = {'type': 'ZeroDivisionError'}
-                >>> with Namespace().error(p):
-                ...    1/0
-
-            Using a custom exception::
-
-                >>> class MyError(Exception):
-                ...     pass
-                ...
-                >>> with_err = Namespace(MyError=MyError)
-                >>> p = {'type': 'MyError', 'pattern': r'\\d+'}
-                >>> with with_err.error(p):
-                ...    raise MyError('404')
-
-        Details:
-            The returned context manager is re-entrant, which makes it possible 
-            to stack :deco:`parametrize_from_file` invocations that make use of 
-            method (e.g. via the *schema* argument).
+        See the `error` documentation for more information.  This method simply 
+        calls `error` with the *globals* argument set to this namespace.
         """
+        from .schema import error
+        return error(exc_spec, globals=self)
 
-        if params == 'none':
-            return ExpectSuccess()
+    def error_or(self, *expected, **kwargs):
+        """
+        Make an exception-checking schema function in the context of this 
+        namespace.
 
-        err = ExpectError(self)
-
-        if isinstance(params, str):
-            err.type_str = params
-        else:
-            def require_list(x):
-                return x if isinstance(x, list) else [x]
-
-            err.type_str = params['type']
-            err.messages = require_list(params.get('message', []))
-            err.patterns = require_list(params.get('pattern', []))
-            err.attr_strs = params.get('attrs', {})
-            err.assertions_str = params.get('assertions', '')
-            err.cause_str = params.get('cause', '')
-
-        return err
-
-class ExpectSuccess(nullcontext):
-
-    def __repr__(self):
-        return f'<{self.__class__.__name__}>'
-
-    def __bool__(self):
-        return False
-
-class ExpectError:
-
-    # Normally I'd use `@contextmanager` to make a context manager like this, 
-    # but generator-based context managers cannot be reused.  This is a problem 
-    # for tests, because if a test using this context manager is parametrized, 
-    # the same context manager instance will need to be reused multiple times.  
-    # The only way to support this is to implement the context manager from 
-    # scratch.
-
-    def __init__(self, namespace, *, type_str=Exception, messages=[], patterns=[], attr_strs={}, assertions_str='', cause_str=''):
-        self.namespace = namespace
-        self.type_str = type_str
-        self.messages = messages
-        self.patterns = patterns
-        self.attr_strs = attr_strs
-        self.assertions_str = assertions_str
-        self.cause_str = cause_str
-
-    def __repr__(self):
-        attrs = {
-                'type': self.type_str,
-                'messages': self.messages,
-                'patterns': self.patterns,
-                'attrs': self.attr_strs,
-                'assertions': self.assertions_str,
-                'cause': self.cause_str,
-        }
-        attr_str = ' '.join(
-                f'{k}={v!r}'
-                for k, v in attrs.items() if v
-        )
-        return f'<{self.__class__.__name__} {attr_str}>'
-
-    def __bool__(self):
-        return True
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        __tracebackhide__ = True
-
-        ns = self.namespace
-        type = self.namespace.eval(self.type_str)
-        if isinstance(type, list):
-            type = tuple(type)
-
-        assert exc_type is not None, f"DID NOT RAISE {type}"
-
-        del exc_type, exc_tb
-        for i in range(ns.eval(self.cause_str or '0')):
-            assert exc_value.__cause__ is not None, f"{exc_value.__class__.__name__} has no direct cause"
-            exc_value = exc_value.__cause__
-
-        if not isinstance(exc_value, type):
-            return False
-
-        exc_str = str(exc_value)
-
-        for msg in self.messages:
-            assert msg in exc_str, f'{msg!r} not in {exc_str!r}'
-
-        for pat in self.patterns:
-            assert re.search(pat, exc_str), "regex pattern {pat!r} does not match {exc_str!r}"
-
-        for attr, value_str in self.attr_strs.items():
-            assert hasattr(exc_value, attr)
-            assert getattr(exc_value, attr) == ns.eval(value_str)
-
-        if self.assertions_str:
-            ns.fork(exc=exc_value).exec(self.assertions_str)
-
-        return True
+        See the `error_or` documentation for more information.  This method 
+        simply calls `error_or` with the *globals* argument set to this 
+        namespace. 
+        """
+        from .schema import error_or
+        return error_or(*expected, **kwargs, globals=self)
 
 def star(module):
     """

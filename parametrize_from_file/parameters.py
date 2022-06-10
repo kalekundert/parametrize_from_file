@@ -10,7 +10,9 @@ from .errors import ConfigError
 from pathlib import Path
 from functools import lru_cache, wraps
 from collections import namedtuple
-from more_itertools import first, zip_broadcast, UnequalIterablesError
+from more_itertools import (
+        first, always_iterable, zip_broadcast, UnequalIterablesError
+)
 from textwrap import indent
 from copy import copy
 
@@ -103,8 +105,8 @@ def parametrize(param_names, param_values, kwargs):
             each key in the corresponding file).
 
         loaders (dict):
-            A dictionary mapping file extensions (e.g. `'.nt'`) to functions 
-            that load test parameters from files (e.g. `nt.load`).  See 
+            A dictionary mapping file extensions (e.g. ``'.nt'``) to functions 
+            that load test parameters from files (e.g. `nestedtext.load`).  See 
             `add_loader` for a more complete description of these functions.  
             The items in this dictionary override the globally defined loaders 
             for the purposes of the decorated test function.
@@ -130,9 +132,10 @@ def parametrize(param_names, param_values, kwargs):
             access to the special *id* and *marks* fields, unlike the *schema* 
             function.
 
-        schema (collections.abc.Callable):
-            A function that will be used to validate and/or transform each set 
-            of parameters.  The function should have the following signature::
+        schema (collections.abc.Callable,list):
+            One or more functions that will be used to validate and/or 
+            transform each set of parameters.  Each function should have the 
+            following signature::
 
                 def schema(params: Dict[str: Any]) -> Dict[str, Any]:
 
@@ -145,9 +148,14 @@ def parametrize(param_names, param_values, kwargs):
             fields, but any values set in the file will override those set by 
             the schema.
 
+            If multiple functions are specified, each will be applied in the 
+            order given.  The output from one function will be the input to the 
+            next.  You can think of these functions as forming a pipeline.
+
             While it's possible to write your own schema functions, this 
-            argument is meant to be used in conjunction with a schema library 
-            such as voluptuous_ or schema_.
+            argument is meant to be used in conjunction `defaults`, `cast`, 
+            `error_or`, or a third-party data validation library such as 
+            voluptuous_ or schema_.
 
         kwargs:
             Any other keyword arguments are passed on directly to 
@@ -237,12 +245,12 @@ def parametrize(param_names, param_values, kwargs):
 
             # test_utils.py
             import parametrize_from_file
-            from voluptuous import Schema
+            from parametrize_from_file import cast
 
             def is_even(x):
                 return x % 2 == 0
 
-            @parametrize_from_file(schema=Schema({str: eval}))
+            @parametrize_from_file(schema=cast(value=int, expected=eval))
             def test_is_even(value, expected):
                 assert is_even(value) == expected
     """
@@ -516,7 +524,7 @@ def _process_test_params(test_params_in, preprocess, context, schema):
             params, stash = stash_id_marks(case_params_in)
 
             try:
-                params = schema(params)
+                params = _eval_schema(schema, params)
             except Exception as err1:
                 err2 = ConfigError(
                         params=case_params_in,
@@ -541,6 +549,11 @@ def _process_test_params(test_params_in, preprocess, context, schema):
         test_params_out.append(case_params_out)
 
     return test_params_out
+
+def _eval_schema(schema, test_params):
+    for schema_i in always_iterable(schema):
+        test_params = schema_i(test_params)
+    return test_params
 
 def _init_parametrize_args(test_params):
     # Convert the keys into a list to better define their order.  It's 

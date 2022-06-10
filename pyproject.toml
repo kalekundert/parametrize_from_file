@@ -19,7 +19,6 @@ dependencies = [
   'more_itertools~=8.10',
   'contextlib2',
   'decopatch',
-  'voluptuous',
 ]
 classifiers = [
   'Programming Language :: Python :: 3',

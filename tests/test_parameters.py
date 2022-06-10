@@ -4,12 +4,14 @@ import pytest
 import parametrize_from_file as pff
 import parametrize_from_file.parameters as pffp
 from unittest.mock import Mock
-from voluptuous import Schema
 from pathlib import Path
 
 pytest_plugins = ['pytester']
 TEST_DIR = Path(__file__).parent
 SENTINEL = object()
+
+def assertion_error(x):
+    raise AssertionError
 
 def value_error_with_braces(x):
     raise ValueError('{hello world}')
@@ -339,32 +341,26 @@ def test_cache_suite_params(tmp_path):
             [],
             None,
             None,
-            Schema({'a': int}),
+            pff.cast(a=lambda x: x+1),
             [],
         ), (
             [{'a': 1}],
             None,
             None,
-            Schema({'a': int}),
-            [{'a': 1}],
+            pff.cast(a=lambda x: x+1),
+            [{'a': 2}],
         ), (
-            [{'a': '1'}],
+            [{}],
             None,
             None,
-            Schema({'a': eval}),
-            [{'a': 1}],
-        ), (
-            [{'a': 1}],
-            None,
-            None,
-            Schema({str: int}),
-            [{'a': 1}],
+            [pff.defaults(a=1), pff.cast(a=lambda x: x+1)],
+            [{'a': 2}],
         ), (
             # schema + id
             [{'a': 1, 'id': 'x'}],
             None,
             None,
-            Schema({str: int}),
+            pff.cast(id=assertion_error),
             [{'a': 1, 'id': 'x'}],
         ), (
             [{'a': 1}],
@@ -383,7 +379,7 @@ def test_cache_suite_params(tmp_path):
             [{'a': 1, 'marks': 'skip'}],
             None,
             None,
-            Schema({str: int}),
+            pff.cast(marks=assertion_error),
             [{'a': 1, 'marks': 'skip'}],
         ), (
             [{'a': 1}],
@@ -422,36 +418,24 @@ def test_process_test_params(test_params, preprocess, context, schema, expected)
             'a',
             None,
             None,
-            Schema({'a': int}),
+            assertion_error,
             ["expected list of dicts, got 'a'"],
         ), (
             ['a'],
             None,
             None,
-            Schema({'a': int}),
+            assertion_error,
             ["expected dict, got 'a'"],
-        ), (
-            [{'a': 'b'}],
-            None,
-            None,
-            Schema({'a': int}),
-            ["test case failed schema validation"],
         ), (
             [{'a': 1}],
             None,
             None,
-            Schema({'b': int}),
-            ["test case failed schema validation"],
-        ), (
-            [{'a': 1, 'b': 'c'}],
-            None,
-            None,
-            Schema({str: int}),
+            assertion_error,
             ["test case failed schema validation"],
         ), (
             # This error message will have braces, which must not be evaluated 
             # by tidyexc.
-            [{'a': 1, 'b': 2}],
+            [{'a': 1}],
             None,
             None,
             value_error_with_braces,
@@ -579,9 +563,9 @@ def test_parametrize(testdir):
     """)
     testdir.makefile('.py', """\
             import parametrize_from_file
-            from voluptuous import Schema
+            from parametrize_from_file import cast
 
-            @parametrize_from_file(schema=Schema({str: eval}))
+            @parametrize_from_file(schema=cast(a=int, b=int, c=int))
             def test_addition(a, b, c):
                 assert a + b == c
 

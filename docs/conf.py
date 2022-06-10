@@ -27,6 +27,8 @@ rst_epilog = """\
 .. _schema: https://github.com/keleshev/schema
 
 .. |PFF| replace:: *Parametrize From File*
+.. |error| replace:: :py:func:`error <parametrize_from_file.error>`
+.. |error_or| replace:: :py:func:`error_or <parametrize_from_file.error_or>`
 .. |NS| replace:: :py:class:`Namespace <parametrize_from_file.Namespace>`
 .. |NS_eval| replace:: :py:class:`Namespace.eval <parametrize_from_file.Namespace.eval>`
 .. |NS_exec| replace:: :py:class:`Namespace.exec <parametrize_from_file.Namespace.exec>`
@@ -51,6 +53,7 @@ intersphinx_mapping = { #
         'python': ('https://docs.python.org/3', None),
         'pytest': ('https://docs.pytest.org/en/stable', None),
         'tmp_files': ('https://pytest-tmp-files.readthedocs.io/en/latest', None),
+        'nestedtext': ('https://nestedtext.org/en/stable', None),
         'pandas': ('https://pandas.pydata.org/pandas-docs/stable', None),
 }
 autosummary_generate = True

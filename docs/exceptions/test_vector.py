@@ -1,17 +1,17 @@
 import parametrize_from_file
 from pytest import approx
-from voluptuous import Schema
-from parametrize_from_file.voluptuous import Namespace
+from parametrize_from_file import Namespace, cast
 
 with_vec = Namespace('from vector import *')
 
 @parametrize_from_file(
-        schema=Schema({
-            'given': with_vec.eval,
-            **with_vec.error_or({
-                'expected': with_vec.eval,
-            }),
-        }),
+        schema=[
+            cast(
+                given=with_vec.eval,
+                expected=with_vec.eval,
+            ),
+            with_vec.error_or('expected'),
+        ],
 )
 def test_normalize(given, expected, error):
     with error:

@@ -29,7 +29,8 @@ the actual ``Vector`` object in the test function, as we did in the
   ``Vector(1, 0) + Vector(0, 1)``.
 
 - We can test invalid inputs, e.g. ``None``, and make sure the proper exception 
-  is raised.  See `exceptions` for more information on this topic.
+  is raised.  See the `exceptions` tutorial for more information on how to do 
+  this elegantly.
 
 Below is the parameter file from the `getting_started` tutorial rewritten using 
 python syntax.  Note that the file is also rewritten in the NestedText_ format.  
@@ -94,10 +95,11 @@ variable:
 Schema argument: Be careful!
 ============================
 Be careful when using |NS_eval| and especially |NS_exec| with the *schema* 
-argument to `parametrize_from_file`.  This can be convenient, but it's 
-important to be cognizant of the fact that schema are evaluated during test 
-collection (i.e.  outside of the tests themselves).  This has a couple 
-consequences:
+argument to `parametrize_from_file` (e.g. via `cast`).  This can be a 
+convenient way to clearly separate boring type-munging code from interesting 
+test code, but it's important to be cognizant of the fact that schema are 
+evaluated during test collection (i.e. outside of the tests themselves).  This 
+has a couple consequences:
 
 - Any errors that occur when evaluating parameters will not be handled very 
   gracefully.  In particular, no tests will run until all errors are fixed (and 
@@ -118,18 +120,21 @@ example, here is a version of ``test_dot()`` that uses a schema:
 
 A few things to note about this example:
 
+- In this case, using a schema isn't really an improvement over processing the 
+  expected value within the test function itself, like we do for the *a* and 
+  *b* parameters.  When it is advantageous to use schema is when you have many 
+  test functions with similar parameters.  Sharing schema between such 
+  functions often eliminates a lot of boiler-plate code.
+
 - This also is a good example of how the |NS| class can be used to control 
   which names are available when evaluating expressions.  Here we make two 
   namespaces: one for just built-in names (including all the names from the 
   math module), and another for our vector package.  This distinction allows us 
   to avoid the possibility of evaluating vector code from the schema.
 
-- This example uses `voluptuous.Namespace` instead of just |NS|.  These two 
-  classes are largely equivalent, but `voluptuous.Namespace` includes some 
-  voluptuous_-specific tweaks, e.g. raising the kind of exceptions expected by 
-  voluptuous_ if `python:eval` or `python:exec` fail.  Currently there are no 
-  custom |NS| classes for any other schema libraries, but if you write one, I'd 
-  be happy to accept a pull request.
+- This example uses `cast`, which is one of the schema functions provided by 
+  *Parametrize From File*.  This function is commonly used in conjunction with 
+  `defaults`, |error|, and |error_or|.
 
 - The ``Vector`` expressions used in these examples are actually a bit of a 
   grey area, because they're simple enough that (i) they're unlikely to break 

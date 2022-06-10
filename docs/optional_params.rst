@@ -28,18 +28,25 @@ The *schema* argument to `parametrize_from_file` can be used to fill in
 unspecified parameters with default values.  This takes advantage of the fact 
 that, although every set of parameters needs to have all the same keys, the 
 schema is applied before this check is made.  So it's possible for the schema 
-to fill in any missing keys.  The following example uses voluptuous_, but any 
-schema library will have support for this feature.  First, the parameter file:
+to fill in any missing keys.  In fact, *Parametrize From File* comes with a 
+`defaults` function that does exactly this.  The following example shows how it 
+works.  First, the parameter file:
 
 .. literalinclude:: optional_params/test_vector_schema.nt
    :caption: test_vector.nt
    :language: nestedtext
 
 Note that *unit* and *magnitude* are only specified for one test each.  The 
-following schema fills in the defaults:
+following schema takes care of evaluating the snippets of python code and 
+filling in the missing defaults:
 
 .. literalinclude:: optional_params/test_vector_schema.py
    :caption: test_vector.py
+
+It's significant that the defaults are specified after the cast functions.  If 
+they were specified before, they would be processed by the cast functions.  In 
+this case, that means they would need to be strings containing python code.  
+Sometimes that's what you want, but not here.
 
 Note that the test function uses degrees as the default unit, while the 
 function itself uses radians.  This is both a good thing and a bad thing.  It's 
@@ -68,3 +75,9 @@ parameter in the NestedText_ file, though.
 
 .. literalinclude:: optional_params/test_vector_kwargs.py
    :caption: test_vector.nt
+
+It's a little dangerous to set the default *kwargs* value to a mutable object 
+like an empty dictionary.  Any changes made to this dictionary will persist 
+between tests, possibly leading to confusing results.  You can avoid this issue 
+by setting the default to `None` and replacing it with the desired value within 
+the test.

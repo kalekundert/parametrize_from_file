@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.16.0 (2022-06-14)
+### Feature
+* Don't eval/exec the error() context managers ([`9d8b2af`](https://github.com/kalekundert/parametrize_from_file/commit/9d8b2af5834b88e42230a75a88582f1c35a934a5))
+
 ## v0.15.0 (2022-06-10)
 ### Feature
 * Provide schema functions tailored for testing ([`275c79d`](https://github.com/kalekundert/parametrize_from_file/commit/275c79d3cfea5951aff624b0a8300fc65d875936))

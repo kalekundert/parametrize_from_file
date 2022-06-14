@@ -225,12 +225,15 @@ class Namespace(Mapping):
                 ...     expected = expected.eval()
 
         Details:
-            `unittest.mock.Mock` instances are handled specially by this 
-            method.  Specifically, they are returned unchanged (i.e. without 
-            being evaluated).  This special case exists because `error_or` uses 
-            `unittest.mock.Mock` instances (by default) as placeholders when an 
-            exception is expected.
+            It's sometimes convenient to call this method on values that have 
+            been processed by `error_or`.  Such inputs may contain instances of 
+            two types that cannot normally be evaluated: `unittest.mock.Mock` 
+            and the internal context manager type returned by `error`.  To 
+            allow for this convenience, both of these types are treated 
+            specially by this method and passed through unchanged.
         """
+        from .schema import ExpectSuccess, ExpectError
+
         if not src:
             return partial(self.eval, keys=keys, defer=defer)
         if defer:
@@ -245,7 +248,7 @@ class Namespace(Mapping):
         elif type(src) is dict:
             f = recurse if keys else lambda x: x
             return {f(k): recurse(v) for k, v in src.items()}
-        elif isinstance(src, Mock):
+        elif isinstance(src, (Mock, ExpectSuccess, ExpectError)):
             return src
         else:
             return eval(src, self._dict.copy())
@@ -319,18 +322,21 @@ class Namespace(Mapping):
                 ...     snippet = snippet.exec()
 
         Details:
-            `unittest.mock.Mock` instances are handled specially by this 
-            method.  Specifically, they are returned unchanged (i.e. without 
-            being executed).  This special case exists because `error_or` uses
-            `unittest.mock.Mock` instances (by default) as placeholders when an 
-            exception is expected.
+            It's sometimes convenient to call this method on values that have 
+            been processed by `error_or`.  Such inputs may contain instances of 
+            two types that cannot normally be evaluated: `unittest.mock.Mock` 
+            and the internal context manager type returned by `error`.  To 
+            allow for this convenience, both of these types are treated 
+            specially by this method and passed through unchanged.
         """
+        from .schema import ExpectSuccess, ExpectError
+
         if src is SENTINEL:
             return partial(self.exec, get=get, defer=defer)
         if defer:
             f = f.exec = partial(self.exec, src, get=get)
             return f
-        if isinstance(src, Mock):
+        if isinstance(src, (Mock, ExpectSuccess, ExpectError)):
             return src
 
         fork = self.fork()

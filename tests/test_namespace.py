@@ -2,7 +2,7 @@
 
 import pytest, sys, os
 from unittest.mock import Mock, MagicMock
-from parametrize_from_file import Namespace, star
+from parametrize_from_file import Namespace, star, error
 from operator import itemgetter
 
 class IgnoreMissing:
@@ -268,11 +268,16 @@ def test_eval_immutable():
     assert ns == {'a': 1}
 
 @pytest.mark.parametrize(
-        'mock', [Mock(), MagicMock()],
+        'obj', [
+            Mock(),
+            MagicMock(),
+            error({'type': 'ZeroDivisionError'}),
+            error('none'),
+        ],
 )
-def test_eval_mock(mock):
+def test_eval_mock(obj):
     ns = Namespace()
-    assert ns.eval(mock) is mock
+    assert ns.eval(obj) is obj
 
 @pytest.mark.parametrize(
         'globals, args, kwargs, error', [
@@ -422,11 +427,16 @@ def test_exec_immutable():
     assert ns3['c'] == 3
 
 @pytest.mark.parametrize(
-        'mock', [Mock(), MagicMock()],
+        'obj', [
+            Mock(),
+            MagicMock(),
+            error({'type': 'ZeroDivisionError'}),
+            error('none'),
+        ],
 )
-def test_exec_mock(mock):
+def test_exec_mock(obj):
     ns = Namespace()
-    assert ns.exec(mock) is mock
+    assert ns.exec(obj) is obj
 
 @pytest.mark.parametrize(
         'globals, src, kwargs, error', [

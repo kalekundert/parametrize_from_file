@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.17.0 (2022-08-23)
+### Feature
+* Allow multiple cast functions for each field ([`c026e8b`](https://github.com/kalekundert/parametrize_from_file/commit/c026e8b9989a9c67c6c45f70a3427207e43d83c0))
+
 ## v0.16.0 (2022-06-14)
 ### Feature
 * Don't eval/exec the error() context managers ([`9d8b2af`](https://github.com/kalekundert/parametrize_from_file/commit/9d8b2af5834b88e42230a75a88582f1c35a934a5))

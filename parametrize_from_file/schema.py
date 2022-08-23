@@ -1,6 +1,7 @@
 import pytest, re
 from .errors import ConfigError
 from unittest.mock import MagicMock
+from more_itertools import always_iterable
 from contextlib2 import nullcontext
 
 def cast(**funcs):
@@ -11,7 +12,10 @@ def cast(**funcs):
     Arguments:
         funcs (dict):
             Keyword arguments where each key is the name of a parameter and 
-            each value if a function to transform that parameter with.
+            each value is either a function or a list of functions to transform 
+            that parameter with.  When lists of functions are given, the 
+            functions will be applied in order, with the return value of each 
+            becoming the input to the next.
 
     Any keys that are missing will be silently ignored; this makes it easier to 
     provide default values with `defaults`.  Note that if you use `defaults` 
@@ -29,12 +33,17 @@ def cast(**funcs):
         {'a': 1}
         >>> f({})
         {}
+        >>> from math import sqrt
+        >>> g = cast(a=[int, sqrt])
+        >>> g({'a': '4'})
+        {'a': 2.0}
     """
 
     def schema(params):
         for key, func in funcs.items():
             if key in params:
-                params[key] = func(params[key])
+                for f in always_iterable(func):
+                    params[key] = f(params[key])
 
         return params
 

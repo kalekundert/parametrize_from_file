@@ -42,6 +42,11 @@ def test_cast():
     schema = pff.cast(a=int)
     assert schema({'a': '1', 'b': 2}) == {'a': 1, 'b': 2}
 
+def test_cast_list():
+    from operator import neg
+    schema = pff.cast(a=[int, neg])
+    assert schema({'a': '1', 'b': 2}) == {'a': -1, 'b': 2}
+
 def test_cast_missing():
     schema = pff.cast(a=int)
     assert schema({}) == {}

@@ -11,7 +11,7 @@ Parametrize From File
 .. image:: https://img.shields.io/readthedocs/parametrize_from_file.svg
    :target: https://parametrize_from_file.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://img.shields.io/github/workflow/status/kalekundert/parametrize_from_file/Test%20and%20release/master
+.. image:: https://img.shields.io/github/actions/workflow/status/kalekundert/parametrize_from_file/test_and_release.yml?branch=master
    :target: https://github.com/kalekundert/parametrize_from_file/actions
 
 .. image:: https://img.shields.io/coveralls/kalekundert/parametrize_from_file.svg

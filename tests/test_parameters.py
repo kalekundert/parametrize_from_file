@@ -243,7 +243,7 @@ def test_load_suite_params(loader, path, contents, expected, tmp_path):
             {'err.nt': 'a ='},
             [
                 "failed to load parametrization file",
-                r"attempted to load file with: nestedtext.load\(\)",
+                r"attempted to load file with: .*nestedtext.load\(\)",
             ],
         ), (
             # Any braces in error messages must not be evaluated by tidyexc.

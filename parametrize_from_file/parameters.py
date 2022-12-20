@@ -153,7 +153,7 @@ def parametrize(param_names, param_values, kwargs):
             next.  You can think of these functions as forming a pipeline.
 
             While it's possible to write your own schema functions, this 
-            argument is meant to be used in conjunction `defaults`, `cast`, 
+            argument is most often used in conjunction with `defaults`, `cast`, 
             `error_or`, or a third-party data validation library such as 
             voluptuous_ or schema_.
 

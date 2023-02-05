@@ -2,7 +2,7 @@ import pytest, re
 from .errors import ConfigError
 from unittest.mock import MagicMock
 from more_itertools import always_iterable
-from contextlib2 import nullcontext
+from contextlib import nullcontext
 
 def cast(**funcs):
     """

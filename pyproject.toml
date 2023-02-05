@@ -17,7 +17,6 @@ dependencies = [
   'tidyexc',
   'pytest',
   'more_itertools~=8.10',
-  'contextlib2',
   'decopatch',
 ]
 classifiers = [

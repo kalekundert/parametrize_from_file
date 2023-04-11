@@ -9,7 +9,7 @@ Parametrize From File
    :target: https://pypi.python.org/pypi/parametrize_from_file
 
 .. image:: https://img.shields.io/readthedocs/parametrize_from_file.svg
-   :target: https://parametrize_from_file.readthedocs.io/en/latest/?badge=latest
+   :target: https://parametrize-from-file.readthedocs.io/
 
 .. image:: https://img.shields.io/github/actions/workflow/status/kalekundert/parametrize_from_file/test_and_release.yml?branch=master
    :target: https://github.com/kalekundert/parametrize_from_file/actions

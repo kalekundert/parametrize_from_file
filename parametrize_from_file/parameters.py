@@ -10,6 +10,8 @@ from .errors import ConfigError
 from pathlib import Path
 from functools import lru_cache, wraps
 from collections import namedtuple
+from collections.abc import Mapping, Sequence
+from difflib import get_close_matches
 from more_itertools import (
         first, always_iterable, zip_broadcast, UnequalIterablesError
 )
@@ -427,15 +429,30 @@ def _load_test_params(loaders, param_path, test_name):
     loader = _pick_loader_by_suffix(loaders, param_path)
     suite_params = _load_and_cache_suite_params(loader, param_path)
 
+    if not isinstance(suite_params, Mapping):
+        err = ConfigError(
+                test_name=test_name,
+                suite_params=suite_params,
+        )
+        err.brief += "unexpected data structure found in parameter file"
+        err.info += lambda e: f"expected a dictionary, found: {type(e.suite_params).__qualname__}"
+        err.hints += "make sure the top-level data structure in the parameter file is a dictionary where the keys are the names of test functions, and the values are dictionaries of test parameters."
+        raise err
+
     try:
         return suite_params[test_name]
 
     except KeyError:
+        close_matches = get_close_matches(test_name, suite_params)
         err = ConfigError(
                 test_name=test_name,
+                close_matches=close_matches,
         )
-        err.brief += "must specify parameters for '{test_name}'"
-        err.hints += "make sure the top-level data structure in the parameter file is a dictionary where the keys are the names of test functions, and the values are dictionaries of test parameters."
+        err.brief += "can't find parameters"
+        err.info += "expected key: {test_name!r}"
+        if close_matches:
+            err.hints += "found similar key: {close_matches[0]!r}; is this a typo?"
+
         raise err from None
 
 def _pick_loader_by_suffix(loaders, param_path):
@@ -486,7 +503,7 @@ def _process_test_params(test_params_in, preprocess, context, schema):
         else:
             test_params_in = preprocess(test_params_in)
 
-    if not isinstance(test_params_in, list):
+    if not isinstance(test_params_in, Sequence) or isinstance(test_params_in, str):
         raise ConfigError(
                 lambda e: (
                     f"expected preprocess to return list of dicts, got {e.params!r}"
@@ -512,7 +529,7 @@ def _process_test_params(test_params_in, preprocess, context, schema):
         return params, stash
 
     for case_params_in in test_params_in:
-        if not isinstance(case_params_in, dict):
+        if not isinstance(case_params_in, Mapping):
             raise ConfigError(
                     "expected dict, got {params!r}",
                     params=case_params_in,

@@ -146,17 +146,33 @@ def test_load_test_params(suite_params, test_name, expected, tmp_path):
     assert test_params == expected
 
 @pytest.mark.parametrize(
-        'suite_params, test_name, message', [(
-            {'b': 1}, 'a',
-            "must specify parameters for 'a'",
+        'suite_params, test_name, messages', [(
+            [], 'a', [
+                "unexpected data structure found in parameter file",
+                "expected a dictionary, found: list",
+                "make sure the top-level",
+            ],
+        ), (
+            {'apple': 1}, 'banana', [
+                "can't find parameters",
+                "expected key: 'banana'",
+            ],
+        ), (
+            {'apple': 1, 'banan': 2}, 'banana', [
+                "can't find parameters",
+                "expected key: 'banana'",
+                "found similar key: 'banan'; is this a typo?",
+            ],
         ),
 ])
-def test_load_test_params_err(suite_params, test_name, message, tmp_path):
+def test_load_test_params_err(suite_params, test_name, messages, tmp_path):
     import json
     p = tmp_path / 'err.json'
     p.write_text(json.dumps(suite_params))
 
-    with pytest.raises(pff.ConfigError, match=message):
+    message_regex = '(?s)' + '.*?'.join(messages)
+
+    with pytest.raises(pff.ConfigError, match=message_regex):
         pffp._load_test_params(pffp.get_loaders(), p, test_name)
 
 def test_pick_loader_by_suffix():

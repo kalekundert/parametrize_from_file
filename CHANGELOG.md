@@ -2,6 +2,17 @@
 
 <!--next-version-placeholder-->
 
+## v0.17.1 (2023-06-22)
+
+### Fix
+
+* Improve error messages ([`3a92dbf`](https://github.com/kalekundert/parametrize_from_file/commit/3a92dbf7fca3fbecac3b425ab3574df3d9983356))
+
+### Documentation
+
+* Fix documentation link ([`da99cc5`](https://github.com/kalekundert/parametrize_from_file/commit/da99cc545f55b5e0201baa9771c4f5368015250f))
+* Fix CI badge ([`a47c0c1`](https://github.com/kalekundert/parametrize_from_file/commit/a47c0c11d63a80aacb235302961d8374f75ae516))
+
 ## v0.17.0 (2022-08-23)
 ### Feature
 * Allow multiple cast functions for each field ([`c026e8b`](https://github.com/kalekundert/parametrize_from_file/commit/c026e8b9989a9c67c6c45f70a3427207e43d83c0))

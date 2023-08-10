@@ -24,7 +24,9 @@ Parametrize From File is a library for reading unit test parameters from config
 files.  It works with the pytest_ framework.  Below is the basic workflow that 
 this package enables:
 
-- Write test cases in a JSON_, YAML_, TOML_, or NestedText_ file::
+- Write test cases in a JSON_, YAML_, TOML_, or NestedText_ file:
+
+  .. code-block:: yml
 
     # test_camelot.yml
     test_str_find:
@@ -37,7 +39,9 @@ this package enables:
       loc: -1
       test_str_find:
 
-- Decorate the corresponding test functions with ``@parametrize_from_file``::
+- Decorate the corresponding test functions with ``@parametrize_from_file``:
+
+  .. code-block:: py
 
     # test_camelot.py
     import parametrize_from_file

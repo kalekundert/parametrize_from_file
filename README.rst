@@ -26,7 +26,7 @@ this package enables:
 
 - Write test cases in a JSON_, YAML_, TOML_, or NestedText_ file:
 
-  .. code-block:: yml
+  .. code-block:: yaml
 
     # test_camelot.yml
     test_str_find:
@@ -37,7 +37,6 @@ this package enables:
     - str: sir robin
       sub: brave
       loc: -1
-      test_str_find:
 
 - Decorate the corresponding test functions with ``@parametrize_from_file``:
 

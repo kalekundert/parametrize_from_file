@@ -26,37 +26,36 @@ this package enables:
 
 - Write test cases in a JSON_, YAML_, TOML_, or NestedText_ file::
 
-    # test_misc.yml
-    test_addition:
-      - a: 1
-        b: 2
-        c: 3
+    # test_camelot.yml
+    test_str_find:
+    - str: sir lancelot
+      sub: lance
+      loc: 4
 
-      - a: 2
-        b: 4
-        c: 6
+    - str: sir robin
+      sub: brave
+      loc: -1
+      test_str_find:
 
 - Decorate the corresponding test functions with ``@parametrize_from_file``::
 
-    # test_misc.py
+    # test_camelot.py
     import parametrize_from_file
 
     @parametrize_from_file
-    def test_addition(a, b, c):
-        assert a + b == c
+    def test_str_find(str, sub, loc):
+        assert str.find(sub) == loc
 
 - Run pytest_ as usual::
 
-    $ pytest
     ============================= test session starts ==============================
-    platform linux -- Python 3.8.2, pytest-6.2.4, py-1.9.0, pluggy-0.13.1
-    rootdir: /home/kale/hacking/projects/parametrize_from_file, configfile: pyproject.toml
-    plugins: forked-1.1.3, anyio-3.1.0, xonsh-0.9.27, typeguard-2.12.1, cov-2.8.1, xdist-1.32.0, hypothesis-5.8.3, mock-2.0.0
-    collected 1 item                                                               
-
-    test_misc.py ..                                                          [100%]
-
-    ============================== 1 passed in 0.12s ===============================
+    platform linux -- Python 3.10.0, pytest-7.4.0, pluggy-1.2.0
+    rootdir: /home/arthur/holy_grail
+    collected 2 items
+    
+    test_camelot.py ..                                                       [100%]
+    
+    ============================== 2 passed in 0.09s ===============================
 
 Refer to the `online documentation <https://parametrize-from-file.rtfd.io>`_ 
 for more information.

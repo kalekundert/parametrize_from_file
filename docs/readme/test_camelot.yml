@@ -1,0 +1,8 @@
+test_str_find:
+  - str: sir lancelot
+    sub: lance
+    loc: 4
+
+  - str: sir robin
+    sub: brave
+    loc: -1

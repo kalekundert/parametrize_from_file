@@ -1,10 +1,9 @@
 import vector
-import parametrize_from_file
-from parametrize_from_file import Namespace
+import parametrize_from_file as pff
 
-with_vec = Namespace("from vector import *")
+with_vec = pff.Namespace("from vector import *")
 
-@parametrize_from_file
+@pff.parametrize
 def test_to_vector(given, expected):
     given = with_vec.exec(given)['obj']
     converted = vector.to_vector(given)

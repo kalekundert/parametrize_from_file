@@ -95,15 +95,15 @@ variable:
 Schema argument: Be careful!
 ============================
 Be careful when using |NS_eval| and especially |NS_exec| with the *schema* 
-argument to `parametrize_from_file` (e.g. via `cast`).  This can be a 
-convenient way to clearly separate boring type-munging code from interesting 
-test code, but it's important to be cognizant of the fact that schema are 
-evaluated during test collection (i.e. outside of the tests themselves).  This 
-has a couple consequences:
+argument to `parametrize` (e.g. via `cast`).  This can be a convenient way to 
+clearly separate boring type-munging code from interesting test code, but it's 
+important to be cognizant of the fact that schema are evaluated during test 
+collection (i.e. outside of the tests themselves).  This has a couple 
+consequences:
 
 - Any errors that occur when evaluating parameters will not be handled very 
   gracefully.  In particular, no tests will run until all errors are fixed (and 
-  it can be hard to find errors without being able to run any tests).
+  it can be hard to fix errors without being able to run any tests).
 
 - Even if you only ask to run a single test, the parameters for every test will 
   have to be evaluated.  This can take a substantial amount of time if you've 

@@ -31,19 +31,19 @@ that will evaluate to an exception type:
    :caption: test_vector.nt
    :language: nestedtext
 
-To write the test function, we'll make use of `Namespace.error_or`.  This 
-method returns a schema function that will expect every set of test parameters 
-to specify either an *error* parameter or whatever "expected" parameters are 
-listed as arguments (just *expected* in this case).  Either way, the test 
-function will receive arguments corresponding to the error *and* every 
-"expected" parameter.  The error argument will be a context manager that will 
-either check that the expected error was raised (if an error was specified) or 
-do nothing (otherwise).  The "expected" arguments will be either be passed 
-directly through to the test function (if no error was specified) or be 
-replaced with |MagicMock| objects (otherwise).  The purpose of replacing the 
-"expected" arguments with |MagicMock| objects is to help avoid the intended 
-exception from getting preempted by some other exception caused by an 
-unspecified expected value.
+To write the test function, we'll make use of `error_or`.  This function sets 
+up a schema that will expect every set of test parameters to specify either an 
+*error* parameter or whatever "expected" parameters are listed as arguments 
+(just *expected* in this case).  Either way, the test function will receive 
+arguments corresponding to the error *and* every "expected" parameter.  The 
+error argument will be a context manager that will either check that the 
+expected error was raised (if an error was specified) or do nothing 
+(otherwise).  The "expected" arguments will be either be passed directly 
+through to the test function (if no error was specified) or be replaced with 
+|MagicMock| objects (otherwise).  The purpose of replacing the "expected" 
+arguments with |MagicMock| objects is to help avoid the intended exception from 
+getting preempted by some other exception caused by an unspecified expected 
+value.
 
 This sounds complicated, but in practice it's not bad.  Hopefully the following 
 example code will help make everything clear:

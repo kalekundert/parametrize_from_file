@@ -24,13 +24,13 @@ parameters:
 
 Schema approach
 ===============
-The *schema* argument to `parametrize_from_file` can be used to fill in 
-unspecified parameters with default values.  This takes advantage of the fact 
-that, although every set of parameters needs to have all the same keys, the 
-schema is applied before this check is made.  So it's possible for the schema 
-to fill in any missing keys.  In fact, *Parametrize From File* comes with a 
-`defaults` function that does exactly this.  The following example shows how it 
-works.  First, the parameter file:
+The *schema* argument to `parametrize` can be used to fill in unspecified 
+parameters with default values.  This takes advantage of the fact that, 
+although every set of parameters needs to have all the same keys, the schema is 
+applied before this check is made.  So it's possible for the schema to fill in 
+any missing keys.  In fact, *Parametrize From File* comes with a `defaults` 
+function that does exactly this.  The following example shows how it works.  
+First, the parameter file:
 
 .. literalinclude:: optional_params/test_vector_schema.nt
    :caption: test_vector.nt

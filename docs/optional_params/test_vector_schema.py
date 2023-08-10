@@ -1,20 +1,18 @@
-import math
 import vector
-import parametrize_from_file
+import parametrize_from_file as pff
 from pytest import approx
-from parametrize_from_file import Namespace, cast, defaults
 
-with_math = Namespace('from math import *')
-with_vec = with_math.fork('from vector import *')
+with_math = pff.Namespace('from math import *')
+with_vec = pff.Namespace(with_math, 'from vector import *')
 
-@parametrize_from_file(
+@pff.parametrize(
         schema=[
-            cast(
+            pff.cast(
                 angle=with_math.eval,
                 magnitude=with_math.eval,
                 expected=with_vec.eval,
             ),
-            defaults(
+            pff.defaults(
                 unit='deg',
                 magnitude=1,
             ),

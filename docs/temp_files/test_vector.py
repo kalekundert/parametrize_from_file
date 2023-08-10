@@ -1,14 +1,12 @@
 import vector
-import parametrize_from_file
-from parametrize_from_file import Namespace, cast, error_or
+import parametrize_from_file as pff
 
-with_py = Namespace()
-with_vec = Namespace('from vector import *')
+with_vec = pff.Namespace('from vector import *')
 
-@parametrize_from_file(
+@pff.parametrize(
         schema=[
-            cast(expected=with_vec.eval),
-            error_or('expected'),
+            pff.cast(expected=with_vec.eval),
+            pff.error_or('expected'),
         ],
         indirect=['tmp_files'],
 )

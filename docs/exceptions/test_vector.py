@@ -1,16 +1,15 @@
-import parametrize_from_file
+import parametrize_from_file as pff
 from pytest import approx
-from parametrize_from_file import Namespace, cast
 
-with_vec = Namespace('from vector import *')
+with_vec = pff.Namespace('from vector import *')
 
-@parametrize_from_file(
+@pff.parametrize(
         schema=[
-            cast(
+            pff.cast(
                 given=with_vec.eval,
                 expected=with_vec.eval,
             ),
-            with_vec.error_or('expected'),
+            pff.error_or('expected', globals=with_vec),
         ],
 )
 def test_normalize(given, expected, error):

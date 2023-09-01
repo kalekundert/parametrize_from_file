@@ -146,9 +146,15 @@ def parametrize(param_names, param_values, kwargs):
             will be used to actually parametrize the test function.  It's ok to 
             add or remove keys from the input dictionary, but keep in mind that 
             every set of parameters for a single test function must ultimately 
-            have the same keys.  The schema may also set the *id* and *marks* 
-            fields, but any values set in the file will override those set by 
-            the schema.
+            have the same keys (which must match the argument list for that 
+            function).
+
+            The schema may also set the *id* and *marks* fields.  If an ID is 
+            specified in the file, it will override the one set by the schema.  
+            If any marks are specified in the file, they will be added to those 
+            specified by the schema.  The schema can either set marks in the 
+            same way as the file (i.e. as a string or list of strings), or as a 
+            list of actual `pytest.mark <mark>` objects.
 
             If multiple functions are specified, each will be applied in the 
             order given.  The output from one function will be the input to the 
@@ -528,6 +534,24 @@ def _process_test_params(test_params_in, preprocess, context, schema):
 
         return params, stash
 
+    def combine_marks(params, stash):
+        marks = process_marks(params) + process_marks(stash)
+        return dict(marks=marks) if marks else {}
+
+    def process_marks(params):
+        try:
+            marks = params.pop('marks')
+        except KeyError:
+            return []
+
+        if isinstance(marks, str):
+            marks = marks.split(',')
+
+        return [
+                getattr(pytest.mark, x) if isinstance(x, str) else x 
+                for x in marks
+        ]
+
     for case_params_in in test_params_in:
         if not isinstance(case_params_in, Mapping):
             raise ConfigError(
@@ -535,11 +559,9 @@ def _process_test_params(test_params_in, preprocess, context, schema):
                     params=case_params_in,
             )
 
-        if not schema:
-            case_params_out = case_params_in
-        else:
-            params, stash = stash_id_marks(case_params_in)
+        params, stash = stash_id_marks(case_params_in)
 
+        if schema:
             try:
                 params = _eval_schema(schema, params)
             except Exception as err1:
@@ -561,7 +583,8 @@ def _process_test_params(test_params_in, preprocess, context, schema):
                         params=params,
                 )
 
-            case_params_out = {**params, **stash}
+        marks = combine_marks(params, stash)
+        case_params_out = {**params, **stash, **marks}
 
         test_params_out.append(case_params_out)
 
@@ -578,26 +601,11 @@ def _init_parametrize_args(test_params):
     # otherwise they might not be matched correctly.  The sorting is just to 
     # make testing easier.
     keys = sorted(_check_test_params_keys(test_params))
-
-    def get_id(case_params, i):
-        return case_params.get('id', str(i))
-
-    def get_marks(case_params):
-        try:
-            marks = case_params['marks']
-        except KeyError:
-            return ()
-
-        if isinstance(marks, str):
-            marks = marks.split(',')
-
-        return [getattr(pytest.mark, x) for x in marks]
-
     values = [
             pytest.param(
                 *(x[k] for k in keys),
-                id=get_id(x, i),
-                marks=get_marks(x),
+                id=x.get('id', str(i)),
+                marks=x.get('marks', ()),
             )
             for i, x in enumerate(test_params, 1)
     ]

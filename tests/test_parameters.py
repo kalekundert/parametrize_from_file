@@ -372,7 +372,13 @@ def test_cache_suite_params(tmp_path):
             [pff.defaults(a=1), pff.cast(a=lambda x: x+1)],
             [{'a': 2}],
         ), (
-            # schema + id
+            # id
+            [{'a': 1, 'id': 'x'}],
+            None,
+            None,
+            None,
+            [{'a': 1, 'id': 'x'}],
+        ), (
             [{'a': 1, 'id': 'x'}],
             None,
             None,
@@ -391,24 +397,72 @@ def test_cache_suite_params(tmp_path):
             lambda x: {**x, 'id': 'y'},
             [{'a': 1, 'id': 'x'}],
         ), (
-            # schema + marks
+            # marks
+            [{'a': 1, 'marks': 'skip'}],
+            None,
+            None,
+            None,
+            [{'a': 1, 'marks': [pytest.mark.skip]}],
+        ), (
+            [{'a': 1, 'marks': 'skip,slow'}],
+            None,
+            None,
+            None,
+            [{'a': 1, 'marks': [pytest.mark.skip, pytest.mark.slow]}],
+        ), (
+            [{'a': 1, 'marks': ['skip']}],
+            None,
+            None,
+            None,
+            [{'a': 1, 'marks': [pytest.mark.skip]}],
+        ), (
+            [{'a': 1, 'marks': ['skip', 'slow']}],
+            None,
+            None,
+            None,
+            [{'a': 1, 'marks': [pytest.mark.skip, pytest.mark.slow]}],
+        ), (
             [{'a': 1, 'marks': 'skip'}],
             None,
             None,
             pff.cast(marks=assertion_error),
-            [{'a': 1, 'marks': 'skip'}],
+            [{'a': 1, 'marks': [pytest.mark.skip]}],
         ), (
             [{'a': 1}],
             None,
             None,
             lambda x: {**x, 'marks': 'skip'},
-            [{'a': 1, 'marks': 'skip'}],
+            [{'a': 1, 'marks': [pytest.mark.skip]}],
+        ), (
+            [{'a': 1}],
+            None,
+            None,
+            lambda x: {**x, 'marks': 'skip,slow'},
+            [{'a': 1, 'marks': [pytest.mark.skip, pytest.mark.slow]}],
+        ), (
+            [{'a': 1}],
+            None,
+            None,
+            lambda x: {**x, 'marks': ['skip']},
+            [{'a': 1, 'marks': [pytest.mark.skip]}],
+        ), (
+            [{'a': 1}],
+            None,
+            None,
+            lambda x: {**x, 'marks': ['skip', 'slow']},
+            [{'a': 1, 'marks': [pytest.mark.skip, pytest.mark.slow]}],
+        ), (
+            [{'a': 1}],
+            None,
+            None,
+            lambda x: {**x, 'marks': [pytest.mark.skip]},
+            [{'a': 1, 'marks': [pytest.mark.skip]}],
         ), (
             [{'a': 1, 'marks': 'skip'}],
             None,
             None,
-            lambda x: {**x, 'marks': []},
-            [{'a': 1, 'marks': 'skip'}],
+            lambda x: {**x, 'marks': 'slow'},
+            [{'a': 1, 'marks': [pytest.mark.slow, pytest.mark.skip]}],
         )
 ])
 def test_process_test_params(test_params, preprocess, context, schema, expected):
@@ -535,21 +589,9 @@ def test_format_case_params(case_params, expected):
             ['a'],
             [pytest.param(1, id='hello')],
         ), (
-            [{'a': 1, 'marks': 'skip'}],
+            [{'a': 1, 'marks': [pytest.mark.skip]}],
             ['a'],
             [pytest.param(1, id='1', marks=[pytest.mark.skip])],
-        ), (
-            [{'a': 1, 'marks': 'skip,slow'}],
-            ['a'],
-            [pytest.param(1, id='1', marks=[pytest.mark.skip, pytest.mark.slow])],
-        ), (
-            [{'a': 1, 'marks': ['skip']}],
-            ['a'],
-            [pytest.param(1, id='1', marks=[pytest.mark.skip])],
-        ), (
-            [{'a': 1, 'marks': ['skip','slow']}],
-            ['a'],
-            [pytest.param(1, id='1', marks=[pytest.mark.skip, pytest.mark.slow])],
         ),
 ])
 def test_init_parametrize_arguments(test_params, keys, values):
@@ -770,7 +812,7 @@ def test_fixture_id_marks(testdir):
                 id: y
                 marks: skip
                 a: y
-                b: y
+                b: z
     """)
     testdir.makefile('.py', """\
             import parametrize_from_file as pff

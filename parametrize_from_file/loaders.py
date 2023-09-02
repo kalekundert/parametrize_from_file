@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
-import json, toml, yaml, nestedtext as nt
+import json
+import toml
+import yaml
+import nestedtext as nt
 import functools
 
 @functools.wraps(json.load)

@@ -8,15 +8,14 @@ from .loaders import get_loaders
 from .utils import is_iterable
 from .errors import ConfigError
 from pathlib import Path
-from functools import lru_cache, wraps
+from functools import lru_cache
 from collections import namedtuple
 from collections.abc import Mapping, Sequence
 from difflib import get_close_matches
 from more_itertools import (
-        first, always_iterable, zip_broadcast, UnequalIterablesError
+        always_iterable, zip_broadcast, UnequalIterablesError
 )
 from textwrap import indent
-from copy import copy
 
 # suite_params:
 #     All parameters associated with the test file in question.  
@@ -285,10 +284,10 @@ def fixture(param_names, param_values, kwargs):
         kwargs:
             See :deco:`parametrize`.
 
-    :doc:`Fixtures <reference/fixtures>` allow multiple test functions to be initialized 
-    in the same way.  Fixtures can be parametrized, in which case the fixture 
-    will be reinitialized (and any dependent test functions rerun) for each 
-    parameter.  
+    :doc:`Fixtures <reference/fixtures>` allow multiple test functions to be 
+    initialized in the same way.  Fixtures can be parametrized, in which case 
+    the fixture will be reinitialized (and any dependent test functions rerun) 
+    for each parameter.  
 
     This decorator creates a fixture function with parameters read from a 
     config file.  The parameters are made available to the function via 
@@ -649,7 +648,7 @@ def _format_case_params(case_params):
         return "\n".join(
                 f'{k!r}: {v!r}' for k, v in case_params.items()
         )
-    except:
+    except Exception:
         return repr(case_params)
 
 class Context:

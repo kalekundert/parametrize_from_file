@@ -1,4 +1,3 @@
-import sys, os
 import parametrize_from_file
 
 ## General

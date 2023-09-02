@@ -1,4 +1,4 @@
-import pytest, re
+import re
 from .errors import ConfigError
 from unittest.mock import MagicMock
 from more_itertools import always_iterable

@@ -36,9 +36,12 @@ from .schema import defaults, cast, error, error_or
 from .loaders import add_loader, drop_loader
 from .errors import ConfigError
 
-__version__ = '0.17.1'
+__version__ = '0.18.0'
 
-for obj in [parametrize, fixture, Namespace, star, defaults, cast, error, error_or, add_loader, drop_loader, load_parameters, ConfigError]:
+for obj in [
+        parametrize, fixture, Namespace, star, defaults, cast, error, error_or,
+        add_loader, drop_loader, load_parameters, ConfigError
+]:
     obj.__module__ = 'parametrize_from_file'
 
 del obj

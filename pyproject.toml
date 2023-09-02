@@ -46,6 +46,15 @@ doc = [
 'Continuous Integration' = 'https://github.com/kalekundert/parametrize_from_file/actions'
 'Test Coverage' = 'https://coveralls.io/github/kalekundert/parametrize_from_file'
 
+[tool.ruff]
+target-version = "py37"
+select = ["F", "E"]
+ignore = ["F405", "F403", "E401", "E501", "E721"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401", "E402"]
+"docs/**" = ["E701", "E722"]
+
 [tool.pytest.ini_options]
 addopts = "--ignore docs --doctest-modules --doctest-glob='*.rst'"
 doctest_optionflags = 'NORMALIZE_WHITESPACE'
@@ -60,4 +69,4 @@ generated_commits = ['^Merge']
 
 [tool.semantic_release]
 version_variable = 'parametrize_from_file/__init__.py:__version__'
-build_command = 'python -m pip install flit && flit build'
+

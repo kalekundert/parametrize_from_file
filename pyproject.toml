@@ -40,7 +40,7 @@ doc = [
 ]
 
 [project.urls]
-'Documentation' = 'https://parametrize_from_file.readthedocs.io/en/latest/'
+'Documentation' = 'https://parametrize-from-file.readthedocs.io/en/latest/'
 'Version Control' = 'https://github.com/kalekundert/parametrize_from_file'
 'Bug Tracker' = 'https://github.com/kalekundert/parametrize_from_file/issues'
 'Continuous Integration' = 'https://github.com/kalekundert/parametrize_from_file/actions'

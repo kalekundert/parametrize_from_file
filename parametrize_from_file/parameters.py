@@ -631,7 +631,7 @@ def _check_test_params_keys(test_params):
                     indent(_format_case_params(e.params), "    ")
             )
             err.blame += lambda e: (
-                "the following parameters are missing:\n" +
+                "the following parameters are present in other test cases, but not this one:\n" +
                 '\n'.join(e.missing)
             )
             raise err

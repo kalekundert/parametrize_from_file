@@ -59,7 +59,10 @@ ignore = ["F405", "F403", "E401", "E501", "E721"]
 addopts = "--ignore docs --doctest-modules --doctest-glob='*.rst'"
 doctest_optionflags = 'NORMALIZE_WHITESPACE'
 markers = ["slow"]
-filterwarnings = ["error"]
+filterwarnings = [
+  "error",
+  'ignore:datetime\.datetime\..* is deprecated:DeprecationWarning',
+]
 
 [tool.semantic_release]
 version_variable = 'parametrize_from_file/__init__.py:__version__'

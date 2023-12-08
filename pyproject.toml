@@ -61,12 +61,6 @@ doctest_optionflags = 'NORMALIZE_WHITESPACE'
 markers = ["slow"]
 filterwarnings = ["error"]
 
-[tool.pccc]
-header_length = 72
-types = ["chore", "docs", "feat", "fix", "refactor", "style", "test"]
-ignore_generated_commits = true
-generated_commits = ['^Merge']
-
 [tool.semantic_release]
 version_variable = 'parametrize_from_file/__init__.py:__version__'
 

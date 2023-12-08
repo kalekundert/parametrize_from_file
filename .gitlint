@@ -1,0 +1,9 @@
+[general]
+ignore=title-must-not-contain-word,body-is-missing,body-trailing-whitespace
+contrib=contrib-title-conventional-commits
+ignore-merge-commits=true
+ignore-revert-commits=true
+
+[contrib-title-conventional-commits]
+types=chore,docs,feat,fix,perf,refactor,style,test,wip
+

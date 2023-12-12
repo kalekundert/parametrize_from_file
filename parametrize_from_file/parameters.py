@@ -33,7 +33,7 @@ from textwrap import indent
 
 def _decorator_factory(api_func):
 
-    @decopatch.function_decorator
+    @decopatch.decorator
     def decorator(
             path=None,
             key=None,

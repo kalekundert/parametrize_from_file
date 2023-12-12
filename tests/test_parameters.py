@@ -765,6 +765,35 @@ def test_parametrize_indirect(testdir):
     result = testdir.runpytest()
     result.assert_outcomes(passed=1)
 
+def test_parametrize_class(testdir):
+    testdir.makefile('.nt', """\
+            TestBinaryOps:
+              -
+                a: 1
+                b: 2
+                c: 3
+              -
+                a: 2
+                b: 4
+                c: 6
+
+    """)
+    testdir.makefile('.py', """\
+            import parametrize_from_file
+            from parametrize_from_file import cast
+
+            @parametrize_from_file(schema=cast(a=int, b=int, c=int))
+            class TestBinaryOps:
+
+                def test_associative(self, a, b, c):
+                    assert (a + b) + c == a + (b + c)
+
+                def test_distributive(self, a, b, c):
+                    assert a * (b + c) == a * b + a * c
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=4)
+
 def test_parametrize_err(testdir):
     testdir.makefile('.py', test_path="""\
             import parametrize_from_file

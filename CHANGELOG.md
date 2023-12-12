@@ -2,6 +2,33 @@
 
 
 
+## v0.19.0 (2023-12-12)
+
+### Chore
+
+* chore: upgrade to latest readthedocs config format ([`74ba8ac`](https://github.com/kalekundert/parametrize_from_file/commit/74ba8acec6f3aa23dff116b79693f25d8ae4aacd))
+
+* chore: ignore deprecation warnings caused by datetime/arrow ([`77b4216`](https://github.com/kalekundert/parametrize_from_file/commit/77b4216e89dd8a3e19b60ed9f856940d90bc46e1))
+
+* chore: switch to gitlint ([`f5ea748`](https://github.com/kalekundert/parametrize_from_file/commit/f5ea7484e31f940fe6b957fd9d9cdd50a590fba5))
+
+* chore: update ruff command ([`1aac862`](https://github.com/kalekundert/parametrize_from_file/commit/1aac862da1275da6410e153f0c12229256214b77))
+
+* chore: fix PyPI link to documentation ([`4448eb7`](https://github.com/kalekundert/parametrize_from_file/commit/4448eb7a058a0779a39185dec4f398ade28c4220))
+
+* chore: add linting; update semantic release ([`bbd5a87`](https://github.com/kalekundert/parametrize_from_file/commit/bbd5a87bae4d8d07606cf9862f2ff9f8b8d3a0b4))
+
+### Feature
+
+* feat: improve error message ([`e910232`](https://github.com/kalekundert/parametrize_from_file/commit/e9102326e2e51d81615b6b7577f9252e54d01855))
+
+### Fix
+
+* fix: handle class-level parametrization correctly
+
+Fixes #21 ([`24f8f13`](https://github.com/kalekundert/parametrize_from_file/commit/24f8f13f0eba388006a5ce51bda5129703c2a993))
+
+
 ## v0.18.0 (2023-09-01)
 
 ### Documentation

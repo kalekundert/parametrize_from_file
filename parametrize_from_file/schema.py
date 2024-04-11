@@ -375,7 +375,7 @@ class ExpectError:
             assert msg in exc_str, f'{msg!r} not in {exc_str!r}'
 
         for pat in self.patterns:
-            assert re.search(pat, exc_str), "regex pattern {pat!r} does not match {exc_str!r}"
+            assert re.search(pat, exc_str), f"regex pattern {pat!r} does not match {exc_str!r}"
 
         for attr, value_str in self.attr_strs.items():
             assert hasattr(exc_value, attr)

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from tidyexc import Error
 
 class ConfigError(Error):

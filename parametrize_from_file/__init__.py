@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Parametrize test functions with values read from config files.
 

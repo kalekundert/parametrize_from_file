@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import pytest, sys, os
 from unittest.mock import Mock, MagicMock
 from parametrize_from_file import Namespace, star, error

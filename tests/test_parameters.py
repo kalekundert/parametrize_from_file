@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import pytest
 import parametrize_from_file as pff
 import parametrize_from_file.parameters as pffp

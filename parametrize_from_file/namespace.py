@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from collections.abc import Mapping, Iterable
 from functools import partial
 from unittest.mock import Mock

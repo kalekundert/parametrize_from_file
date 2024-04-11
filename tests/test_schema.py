@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import pytest
 import parametrize_from_file as pff
 from parametrize_from_file.schema import ExpectSuccess

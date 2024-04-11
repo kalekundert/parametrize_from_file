@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from collections.abc import Iterable
 
 def is_iterable(obj, not_iterable=(str, bytes)):

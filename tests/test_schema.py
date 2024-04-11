@@ -309,6 +309,14 @@ def test_error_or_globals(wrap_globals):
     with params['error']:
         raise MockError1
 
+def test_error_or_namespace():
+    with_mock = pff.Namespace({'E1': MockError1})
+    schema = with_mock.error_or('a')
+    params = schema({'error': 'E1'})
+
+    with params['error']:
+        raise MockError1
+
 def test_error_or_param():
     schema = pff.error_or('a', param='err')
     params = schema({'err': 'ZeroDivisionError'})

@@ -70,6 +70,38 @@ def defaults(**defaults):
     """
     return lambda params: {**defaults, **params}
 
+def rename(names=None, /, **kwarg_names):
+    """
+    Return a schema function that will rename the specified parameters.
+    
+    Arguments:
+        names (dict):
+            A dictionary where each key is the name of a parameter and each 
+            value is the new name that parameter should have.  This argument 
+            can be specified either as a positional argument or as keyword 
+            arguments.  Keyword arguments are generally easier to read, but the 
+            positional argument allows for names that aren't valid python 
+            identifiers.  If the same name is present both in the positional 
+            dictionary and as a keyword argument, the keyword value is the one 
+            that will be used.
+
+    Sometimes the names that make sense to use in the parameter file are less 
+    convenient in the test script, e.g. because they conflict with a fixture, 
+    or the name of a function being tested, or something like that.  This 
+    function solves this problem by providing a way to use different names in 
+    the test script than in the parameter file.
+
+    Any parameters not explicitly mentioned will be kept unchanged.
+    """
+    names = {
+            **(names or {}),
+            **kwarg_names,
+    }
+    return lambda params: {
+            names.get(k, k): v
+            for k, v in params.items()
+    }
+
 def error(exc_spec, *, globals=None):
     """\
     Create a context manager that will check that the specified exception is

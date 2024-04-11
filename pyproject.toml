@@ -9,7 +9,7 @@ authors = [
 ]
 readme = 'README.rst'
 dynamic = ["version", "description"]
-requires-python = "~=3.7"
+requires-python = "~=3.8"
 dependencies = [
   'toml',
   'pyyaml',
@@ -20,7 +20,7 @@ dependencies = [
   'decopatch',
 ]
 classifiers = [
-  'Programming Language :: Python :: 3',
+  'Programming Language :: Python :: 3.8',
   'License :: OSI Approved :: MIT License',
 ]
 

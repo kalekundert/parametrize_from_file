@@ -32,15 +32,26 @@ instead to import the module as ``pff``, e.g.:
 
 from .parameters import parametrize, fixture, load_parameters
 from .namespace import Namespace, star
-from .schema import defaults, cast, error, error_or
+from .schema import defaults, cast, rename, error, error_or
 from .loaders import add_loader, drop_loader
 from .errors import ConfigError
 
 __version__ = '0.19.0'
 
 for obj in [
-        parametrize, fixture, Namespace, star, defaults, cast, error, error_or,
-        add_loader, drop_loader, load_parameters, ConfigError
+        parametrize,
+        fixture,
+        Namespace,
+        star,
+        defaults,
+        cast,
+        rename,
+        error,
+        error_or,
+        add_loader,
+        drop_loader,
+        load_parameters,
+        ConfigError,
 ]:
     obj.__module__ = 'parametrize_from_file'
 

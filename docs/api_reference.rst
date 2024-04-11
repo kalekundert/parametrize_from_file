@@ -11,6 +11,7 @@ API reference
    parametrize_from_file.Namespace
    parametrize_from_file.cast
    parametrize_from_file.defaults
+   parametrize_from_file.rename
    parametrize_from_file.error
    parametrize_from_file.error_or
    parametrize_from_file.star

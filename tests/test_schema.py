@@ -51,6 +51,18 @@ def test_cast_missing():
     schema = pff.cast(a=int)
     assert schema({}) == {}
 
+def test_rename_positional():
+    schema = pff.rename({'a': 'b'})
+    assert schema({'a': 1, 'z': 2}) == {'b': 1, 'z': 2}
+
+def test_rename_keyword():
+    schema = pff.rename(a='b')
+    assert schema({'a': 1, 'z': 2}) == {'b': 1, 'z': 2}
+
+def test_rename_positional_and_keyword():
+    schema = pff.rename({'a': 'b'}, a='c')
+    assert schema({'a': 1, 'z': 2}) == {'c': 1, 'z': 2}
+
 @pytest.mark.parametrize(
         'globals, exc_spec, expected_errors, unexpected_errors', [
             # Type

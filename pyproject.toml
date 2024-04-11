@@ -48,10 +48,12 @@ doc = [
 
 [tool.ruff]
 target-version = "py37"
+
+[tool.ruff.lint]
 select = ["F", "E"]
 ignore = ["F405", "F403", "E401", "E501", "E721"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "E402"]
 "docs/**" = ["E701", "E722"]
 
@@ -65,5 +67,7 @@ filterwarnings = [
 ]
 
 [tool.semantic_release]
-version_variable = 'parametrize_from_file/__init__.py:__version__'
+version_variables = ['parametrize_from_file/__init__.py:__version__']
+build_command = 'python -m pip install build && python -m build'
+major_on_zero = false
 

@@ -57,14 +57,22 @@ def _decorator_factory(api_func):
                 test_path=test_path,
         ):
             loaders = _override_global_loaders(loaders)
+            path = _resolve_param_path(test_path, path, loaders)
+            key = key or test_func.__name__
             param_names, param_values = load_parameters(
-                    _resolve_param_path(test_path, path, loaders),
-                    key or test_func.__name__,
+                    path=path,
+                    key=key,
                     loaders=loaders,
                     preprocess=preprocess,
                     schema=schema,
             )
-            return api_func(param_names, param_values, kwargs)(test_func)
+            wrapper = api_func(param_names, param_values, kwargs)(test_func)
+            wrapper.path = path
+            wrapper.key = key
+            wrapper.loaders = loaders
+            wrapper.preprocess = preprocess
+            wrapper.schema = schema
+            return wrapper
 
     # functools.wraps() messes up the function signature in the documentation 
     # for some reason...
@@ -232,6 +240,11 @@ def parametrize(param_names, param_values, kwargs):
     decorate the same test function multiple times: all combinations of 
     parameters specified in this way will be tested.  Likewise, this decorator 
     can be combined freely with the `pytest.mark.parametrize ref` decorator.
+
+    The resulting decorated test function will have attributes corresponding to the 
+    *path*, *key*, *loaders*, *preprocess*, and *schema* arguments.  These 
+    attributes are sometimes useful for sharing the same parameters between 
+    multiple tests.
 
     Example:
         Load parameters from a NestedText_ file, and assign types using a 

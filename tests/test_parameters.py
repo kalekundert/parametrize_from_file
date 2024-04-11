@@ -664,9 +664,16 @@ def test_parametrize_path(testdir):
             @parametrize_from_file('test_file_alt.nt')
             def test_eq(a, b):
                 assert a == b
+
+            @parametrize_from_file(
+                    path=test_eq.path,
+                    key=test_eq.key,
+            )
+            def test_eq_again(a, b):
+                assert a == b
     """)
     result = testdir.runpytest()
-    result.assert_outcomes(passed=1)
+    result.assert_outcomes(passed=2)
 
 def test_parametrize_key(testdir):
     testdir.makefile('.nt', test_file="""\
@@ -681,9 +688,13 @@ def test_parametrize_key(testdir):
             @parametrize_from_file(key='test_eq_alt')
             def test_eq(a, b):
                 assert a == b
+
+            @parametrize_from_file(key=test_eq.key)
+            def test_eq_again(a, b):
+                assert a == b
     """)
     result = testdir.runpytest()
-    result.assert_outcomes(passed=1)
+    result.assert_outcomes(passed=2)
 
 def test_parametrize_loaders(testdir):
     testdir.makefile('.xyz', test_file="""\
@@ -701,9 +712,16 @@ def test_parametrize_loaders(testdir):
             )
             def test_eq(a, b):
                 assert a == b
+
+            @parametrize_from_file(
+                    key=test_eq.key,
+                    loaders=test_eq.loaders,
+            )
+            def test_eq_again(a, b):
+                assert a == b
     """)
     result = testdir.runpytest()
-    result.assert_outcomes(passed=1)
+    result.assert_outcomes(passed=2)
 
 def test_parametrize_preprocess(testdir):
     testdir.makefile('.nt', test_file="""\
@@ -720,13 +738,20 @@ def test_parametrize_preprocess(testdir):
             )
             def test_eq(a, b):
                 assert a == b
+
+            @parametrize_from_file(
+                    key=test_eq.key,
+                    preprocess=test_eq.preprocess,
+            )
+            def test_eq_again(a, b):
+                assert a == b
     """)
     result = testdir.runpytest()
-    result.assert_outcomes(passed=2)
+    result.assert_outcomes(passed=4)
 
 def test_parametrize_schema(testdir):
     testdir.makefile('.nt', test_file="""\
-            test_double:
+            test_numbers:
               -
                 a: 1
                 b: 2
@@ -735,13 +760,22 @@ def test_parametrize_schema(testdir):
             import parametrize_from_file
 
             @parametrize_from_file(
-                schema=lambda x: {k: int(v) for k, v in x.items()},
+                schema=lambda x: dict(a=int(x['a']), b=float(x['b'])),
             )
-            def test_double(a, b):
-                assert a * 2 == b
+            def test_numbers(a, b):
+                assert a == 1; assert isinstance(a, int)
+                assert b == 2; assert isinstance(b, float)
+
+            @parametrize_from_file(
+                key=test_numbers.key,
+                schema=test_numbers.schema,
+            )
+            def test_numbers_again(a, b):
+                assert a == 1; assert isinstance(a, int)
+                assert b == 2; assert isinstance(b, float)
     """)
     result = testdir.runpytest()
-    result.assert_outcomes(passed=1)
+    result.assert_outcomes(passed=2)
 
 def test_parametrize_indirect(testdir):
     testdir.makefile('.nt', """\

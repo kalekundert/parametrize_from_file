@@ -723,6 +723,54 @@ def test_parametrize_loaders(testdir):
     result = testdir.runpytest()
     result.assert_outcomes(passed=2)
 
+def test_parametrize_loaders_global(testdir):
+    testdir.makefile('.xyz', test_file="""\
+            test_eq:
+              -
+                a: x
+                b: x
+    """)
+    testdir.makefile('.py', test_file="""\
+            import parametrize_from_file as pff
+            import nestedtext as nt
+
+            pff.add_loader('.xyz', nt.load)
+
+            @pff.parametrize
+            def test_eq(a, b):
+                assert a == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=1)
+
+    # The previous snippet changed global state, so now this snippet can run 
+    # without needing to explicitly add a loader.
+    testdir.makefile('.py', test_file="""\
+            import parametrize_from_file as pff
+            import nestedtext as nt
+
+            @pff.parametrize
+            def test_eq(a, b):
+                assert a == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=1)
+
+    # Test removing a loader, but also just reset the global state to the way 
+    # it was before this test started.
+    testdir.makefile('.py', test_file="""\
+            import parametrize_from_file as pff
+            import nestedtext as nt
+
+            pff.drop_loader('.xyz')
+
+            @pff.parametrize
+            def test_eq(a, b):
+                assert a == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(errors=1)
+
 def test_parametrize_preprocess(testdir):
     testdir.makefile('.nt', test_file="""\
             test_eq:

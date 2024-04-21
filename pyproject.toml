@@ -16,7 +16,7 @@ dependencies = [
   'nestedtext',
   'tidyexc',
   'pytest',
-  'more_itertools~=8.10',
+  'more_itertools>=8.10',
   'decopatch',
 ]
 classifiers = [

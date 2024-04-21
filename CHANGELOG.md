@@ -2,6 +2,31 @@
 
 
 
+## v0.20.0 (2024-04-21)
+
+### Chore
+
+* chore: allow more_itertools&gt;=8.10 ([`1b8366c`](https://github.com/kalekundert/parametrize_from_file/commit/1b8366c5b6a8d2a93424df7bc8903ab663a8d893))
+
+* chore: fix the release process ([`c044bdd`](https://github.com/kalekundert/parametrize_from_file/commit/c044bddd4b7ce8e535731667d6fc1afdde235d80))
+
+* chore: remove unnecessary shebang lines ([`adccaf6`](https://github.com/kalekundert/parametrize_from_file/commit/adccaf69bc0fe567058d88bfb257d9074930597f))
+
+* chore: fix typo in test error message ([`fe495bd`](https://github.com/kalekundert/parametrize_from_file/commit/fe495bd11b504fbd398e52357455ddf12beccd45))
+
+### Feature
+
+* feat: add a schema function to rename parameters ([`de5a71e`](https://github.com/kalekundert/parametrize_from_file/commit/de5a71ea3850de53351315d696c7146ef212ba34))
+
+* feat: save decorator arguments as function attributes ([`367dff2`](https://github.com/kalekundert/parametrize_from_file/commit/367dff2f54da6eb86e7d8492a289bb209094ca88))
+
+### Test
+
+* test: improve test coverage ([`b3e6791`](https://github.com/kalekundert/parametrize_from_file/commit/b3e6791ea0427e88df736fe3155e4f43feb0e3de))
+
+* test: test `add_loader()` and `remove_loader()` ([`681edbc`](https://github.com/kalekundert/parametrize_from_file/commit/681edbcbf63b3b4af4f053ff568498c59ab084f0))
+
+
 ## v0.19.0 (2023-12-12)
 
 ### Chore
@@ -27,6 +52,10 @@
 * fix: handle class-level parametrization correctly
 
 Fixes #21 ([`24f8f13`](https://github.com/kalekundert/parametrize_from_file/commit/24f8f13f0eba388006a5ce51bda5129703c2a993))
+
+### Unknown
+
+* 0.19.0 ([`69ef36a`](https://github.com/kalekundert/parametrize_from_file/commit/69ef36a3b9e5b5a9a972a03513a8d49b7054b5c6))
 
 
 ## v0.18.0 (2023-09-01)

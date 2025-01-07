@@ -939,6 +939,41 @@ def test_fixture_id_marks(testdir):
     assert 'test_eq[x] PASSED' in stdout
     assert 'test_eq[y] SKIPPED' in stdout
 
+def test_fixture_scope(testdir):
+    testdir.makefile('.yml', """\
+            abc:
+              - a: 1
+                b: 2
+
+              - a: 3
+                b: 6
+    """)
+    testdir.makefile('.py', """\
+            import parametrize_from_file as pff
+            from collections import Counter
+
+            fixture_calls = Counter()
+
+            @pff.fixture(scope='module')
+            def abc(request):
+                a, b = request.param.a, request.param.b
+                fixture_calls[a, b] += 1
+                return a, b, fixture_calls[a, b]
+
+            def test_div(abc):
+                a, b, c = abc
+                assert b // a == 2
+                assert c == 1
+
+            def test_mod(abc):
+                a, b, c = abc
+                assert a % 2 == 1
+                assert b % 2 == 0
+                assert c == 1
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=4)
+
 @pytest.mark.parametrize(
         'files, get_path, key, expected_keys, expected_values', [(
             {

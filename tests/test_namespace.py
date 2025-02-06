@@ -3,6 +3,12 @@ from unittest.mock import Mock, MagicMock
 from parametrize_from_file import Namespace, star, error
 from operator import itemgetter
 
+class Named1:
+    pass
+
+def named_2():
+    pass
+
 class IgnoreMissing:
 
     def __init__(self, items):
@@ -22,6 +28,7 @@ parametrize_init_fork = pytest.mark.parametrize(
             ([{'a': 1}], {}, {'a': 1}),
             (['a = 1'], {}, {'a': 1}),
             ([sys], {}, {'sys': sys}),
+            ([Named1], {}, {'Named1': Named1}),
             ([], {'a': 1}, {'a': 1}),
 
             # Two names:
@@ -35,16 +42,25 @@ parametrize_init_fork = pytest.mark.parametrize(
             (['a = 1', {'b': 2}], {}, {'a': 1, 'b': 2}),
             (['a = 1', 'b = 2'], {}, {'a': 1, 'b': 2}),
             (['a = 1', sys], {}, {'a': 1, 'sys': sys}),
+            (['a = 1', Named1], {}, {'a': 1, 'Named1': Named1}),
             (['a = 1'], {'b': 2}, {'a': 1, 'b': 2}),
 
             ([sys, {'b': 2}], {}, {'sys': sys, 'b': 2}),
             ([sys, 'b = 2'], {}, {'sys': sys, 'b': 2}),
             ([sys, os], {}, {'sys': sys, 'os': os}),
+            ([sys, Named1], {}, {'sys': sys, 'Named1': Named1}),
             ([sys], {'b': 2}, {'sys': sys, 'b': 2}),
+
+            ([Named1, {'b': 2}], {}, {'Named1': Named1, 'b': 2}),
+            ([Named1, 'b = 2'], {}, {'Named1': Named1, 'b': 2}),
+            ([Named1, sys], {}, {'Named1': Named1, 'sys': sys}),
+            ([Named1, named_2], {}, {'Named1': Named1, 'named_2': named_2}),
+            ([Named1], {'b': 2}, {'Named1': Named1, 'b': 2}),
 
             ([{'b': 2}], {'a': 1}, {'a': 1, 'b': 2}),
             (['b = 2'], {'a': 1}, {'a': 1, 'b': 2}),
             ([sys], {'a': 1}, {'a': 1, 'sys': sys}),
+            ([Named1], {'a': 1}, {'a': 1, 'Named1': Named1}),
             ([], {'a': 1, 'b': 2}, {'a': 1, 'b': 2}),
 
             # Order matters:

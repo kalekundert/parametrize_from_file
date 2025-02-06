@@ -38,7 +38,8 @@ class Namespace(Mapping):
             >>> with_math.eval('math.sqrt(4)')
             2.0
 
-        ...modules:
+        ...anything with a `__name__` attribute, e.g. modules, classes, and 
+        functions:
             
             >>> with_math = Namespace(math)
             >>> with_math.eval('math.sqrt(4)')
@@ -396,10 +397,8 @@ def star(module):
     }
 
 def _update_namespace(ns_dict, *args, **kwargs):
-    from inspect import ismodule
-
     for arg in args:
-        if ismodule(arg):
+        if hasattr(arg, '__name__'):
             ns_dict[arg.__name__] = arg
         elif isinstance(arg, str):
             exec(arg, ns_dict)

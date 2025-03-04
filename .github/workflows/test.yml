@@ -2,7 +2,11 @@ name: Test
 
 on:
   push:
+    branches:
+    - master
   pull_request:
+    branches:
+    - master
 
 jobs:
 
@@ -19,11 +23,16 @@ jobs:
 
   test:
     name: Run tests
-    runs-on: ubuntu-latest
 
     strategy:
       matrix:
         python-version: ['3.8', '3.x']
+        operating-system:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    runs-on: ${{ matrix.operating-system }}
 
     steps:
       - uses: actions/checkout@v4

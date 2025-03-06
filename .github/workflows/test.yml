@@ -46,6 +46,10 @@ jobs:
       - name: Run test suite
         run: |
           pytest --cov parametrize_from_file
+
+      - name: Run documentation examples
+        if: ${{ matrix.operating-system == 'ubuntu-latest' }}
+        run: |
           docs/test_docs.sh
       - name: Report test coverage
         env:

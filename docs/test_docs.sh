@@ -1,5 +1,6 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 set -euo pipefail
+shopt -s globstar
 
 # Have to run each documentation example separately, because otherwise pytest 
 # gets confused by the duplicate file names.  I tried to work around this by 

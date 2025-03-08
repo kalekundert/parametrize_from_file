@@ -6,12 +6,12 @@ import functools
 
 @functools.wraps(json.load)
 def _load_json(path):
-    with open(path) as f:
+    with open(path, 'rb') as f:
         return json.load(f)
 
 @functools.wraps(yaml.safe_load)
 def _load_yml(path):
-    with open(path) as f:
+    with open(path, 'rb') as f:
         return yaml.safe_load(f)
 
 _LOADERS = {

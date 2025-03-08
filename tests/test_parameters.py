@@ -884,8 +884,29 @@ def test_parametrize_err(testdir):
     """)
     result = testdir.runpytest()
     stdout = '\n'.join(result.outlines)
+    test_path = testdir.tmpdir / 'test_path.py'
     assert 'test function: test_noop()' in stdout
-    assert f'test file: {testdir.tmpdir}/test_path.py' in stdout
+    assert f'test file: {test_path}' in stdout
+
+def test_parametrize_unicode_json(testdir):
+    testdir.makefile('.json', """\
+            {
+                "test_eq": [
+                    {"a": "α", "b": "α"},
+                    {"a": "α", "b": "β"}
+                ]
+            }
+    """)
+    testdir.makefile('.py', """\
+            import parametrize_from_file
+            from parametrize_from_file import cast
+
+            @parametrize_from_file
+            def test_eq(a, b):
+                assert a == b
+    """)
+    result = testdir.runpytest()
+    result.assert_outcomes(passed=1, failed=1)
 
 def test_fixture(testdir):
     testdir.makefile('.nt', """\

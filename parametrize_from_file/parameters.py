@@ -8,7 +8,7 @@ from .errors import ConfigError
 from pathlib import Path
 from functools import lru_cache
 from collections import namedtuple
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, Iterable
 from difflib import get_close_matches
 from more_itertools import (
         always_iterable, zip_broadcast, UnequalIterablesError
@@ -121,10 +121,11 @@ def parametrize(param_names, param_values, kwargs):
         preprocess (collections.abc.Callable):
             A function that will be allowed to modify the list of test cases 
             loaded from the parameter file, e.g. to programmatically generate 
-            and/or prune test cases.  The function should have the following 
-            signature::
+            and/or prune test cases.  The function should have one of the 
+            following signatures::
 
-                def preprocess(params: Any, [context: Context]) -> List[Dict[str, Any]]
+                (params: Any) -> Iterable[dict[str, Any]]
+                (params: Any, context: Context) -> Iterable[dict[str, Any]]
 
             The first argument will be the value associated with the given key 
             in the parameter file.  Typically this value is a list, but it 
@@ -133,18 +134,20 @@ def parametrize(param_names, param_values, kwargs):
             *key* attributes specifying where the aforementioned value was 
             loaded from.  If multiple parameter files and/or keys are 
             specified, this function will be called separately on each one.  
-            The return value must be a list of dicts.  Each of these dicts will 
-            be further processed by the *schema* argument before being used to 
-            parametrize the test function.  Note that this function does get 
-            access to the special *id* and *marks* fields, unlike the *schema* 
-            function.
+            The return values (or yielded values, in the event that the 
+            function is a generator) are the modified test cases, represented 
+            as dictionaries mapping parameter names to parameter values.  Each 
+            of these dictionaries will be further processed by the *schema* 
+            argument before being used to parametrize the test function.  Note 
+            that this function does get access to the special *id* and *marks* 
+            fields, unlike the *schema* function.
 
         schema (collections.abc.Callable,list):
             One or more functions that will be used to validate and/or 
             transform each set of parameters.  Each function should have the 
             following signature::
 
-                def schema(params: Dict[str: Any]) -> Dict[str, Any]:
+                (params: dict[str: Any]) -> dict[str, Any]:
 
             The argument will be the set of parameters for a single test case, 
             excluding the special *id* and *marks* fields.  The return value 
@@ -519,7 +522,7 @@ def _process_test_params(test_params_in, preprocess, context, schema):
         else:
             test_params_in = preprocess(test_params_in)
 
-    if not isinstance(test_params_in, Sequence) or isinstance(test_params_in, str):
+    if not isinstance(test_params_in, Iterable) or isinstance(test_params_in, str):
         raise ConfigError(
                 lambda e: (
                     f"expected preprocess to return list of dicts, got {e.params!r}"

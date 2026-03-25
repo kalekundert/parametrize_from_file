@@ -343,6 +343,12 @@ def test_cache_suite_params(tmp_path):
             [{'a': 1}, {'a': 2}],
         ), (
             [{'a': 1}],
+            lambda xs: iter(xs + [{'a': 2}]),
+            None,
+            None,
+            [{'a': 1}, {'a': 2}],
+        ), (
+            [{'a': 1}],
             lambda xs, ctx: [
                 {'path': ctx.path, 'key': ctx.key, **x}
                 for x in xs

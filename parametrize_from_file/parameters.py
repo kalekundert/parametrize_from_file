@@ -11,9 +11,14 @@ from collections import namedtuple
 from collections.abc import Mapping, Iterable
 from difflib import get_close_matches
 from more_itertools import (
-        always_iterable, zip_broadcast, UnequalIterablesError
+        always_iterable, zip_broadcast
 )
 from textwrap import indent
+
+try:
+    from more_itertools import UnequalIterablesError
+except ImportError:
+    UnequalIterablesError = ValueError
 
 # suite_params:
 #     All parameters associated with the test file in question.  

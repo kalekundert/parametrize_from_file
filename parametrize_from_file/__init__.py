@@ -34,7 +34,7 @@ from .schema import defaults, cast, rename, error, error_or
 from .loaders import add_loader, drop_loader
 from .errors import ConfigError
 
-__version__ = '0.20.0'
+__version__ = '0.21.0'
 
 for obj in [
         parametrize,
